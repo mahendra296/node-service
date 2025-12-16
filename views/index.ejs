@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AlisterBank - Your Trusted Banking Partner</title>
+    <link rel="stylesheet" href="/style.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <%- include('header') %> <% if(user) {%> you are logged in <%} else {%> you
+    are not logged in <%}%>
+    <main>
+      <!-- Hero Section -->
+      <section class="hero">
+        <div class="hero-container">
+          <div class="hero-content">
+            <span class="hero-badge">Welcome to AlisterBank</span>
+            <h1>
+              Banking Made <span class="highlight">Simple</span> &
+              <span class="highlight">Secure</span>
+            </h1>
+            <p>
+              Experience the future of banking with our innovative solutions.
+              Personal loans, credit cards, mortgages, and more - all designed
+              with your financial success in mind.
+            </p>
+            <div class="hero-buttons">
+              <a href="/register" class="btn-primary btn-lg">Open an Account</a>
+              <a href="#services" class="btn-outline btn-lg"
+                >Explore Services</a
+              >
+            </div>
+            <div class="hero-stats">
+              <div class="stat-item">
+                <span class="stat-number">2M+</span>
+                <span class="stat-label">Happy Customers</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-number">150+</span>
+                <span class="stat-label">Branches</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-number">$50B+</span>
+                <span class="stat-label">Assets Managed</span>
+              </div>
+            </div>
+          </div>
+          <div class="hero-image">
+            <div class="hero-card main-card">
+              <div class="card-chip"></div>
+              <div class="card-number">**** **** **** 4589</div>
+              <div class="card-details">
+                <div class="card-holder">
+                  <span class="label">Card Holder</span>
+                  <span class="value">JOHN DOE</span>
+                </div>
+                <div class="card-expiry">
+                  <span class="label">Expires</span>
+                  <span class="value">12/28</span>
+                </div>
+              </div>
+              <div class="card-logo">AlisterBank</div>
+            </div>
+            <div class="floating-element element-1">
+              <svg
+                width="24"
+                height="24"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                />
+              </svg>
+              <span>Secure</span>
+            </div>
+            <div class="floating-element element-2">
+              <svg
+                width="24"
+                height="24"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                />
+              </svg>
+              <span>+24.5%</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Services Section -->
+      <section class="services" id="services">
+        <div class="section-container">
+          <div class="section-header">
+            <span class="section-badge">Our Services</span>
+            <h2>Complete Banking Solutions</h2>
+            <p>
+              From everyday banking to long-term investments, we have everything
+              you need.
+            </p>
+          </div>
+          <div class="services-grid">
+            <div class="service-card">
+              <div class="service-icon">
+                <svg
+                  width="32"
+                  height="32"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                  />
+                </svg>
+              </div>
+              <h3>Credit Cards</h3>
+              <p>
+                Choose from our range of credit cards with competitive rates,
+                rewards, and cashback offers.
+              </p>
+              <a href="#" class="service-link"
+                >Learn More
+                <svg
+                  width="16"
+                  height="16"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M17 8l4 4m0 0l-4 4m4-4H3"
+                  /></svg
+              ></a>
+            </div>
+            <div class="service-card">
+              <div class="service-icon">
+                <svg
+                  width="32"
+                  height="32"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                  />
+                </svg>
+              </div>
+              <h3>Home Loans</h3>
+              <p>
+                Make your dream home a reality with our flexible mortgage
+                options and low interest rates.
+              </p>
+              <a href="#" class="service-link"
+                >Learn More
+                <svg
+                  width="16"
+                  height="16"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M17 8l4 4m0 0l-4 4m4-4H3"
+                  /></svg
+              ></a>
+            </div>
+            <div class="service-card">
+              <div class="service-icon">
+                <svg
+                  width="32"
+                  height="32"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+              <h3>Personal Loans</h3>
+              <p>
+                Get quick personal loans for any purpose with minimal
+                documentation and fast approval.
+              </p>
+              <a href="#" class="service-link"
+                >Learn More
+                <svg
+                  width="16"
+                  height="16"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M17 8l4 4m0 0l-4 4m4-4H3"
+                  /></svg
+              ></a>
+            </div>
+            <div class="service-card">
+              <div class="service-icon">
+                <svg
+                  width="32"
+                  height="32"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                  />
+                </svg>
+              </div>
+              <h3>Insurance</h3>
+              <p>
+                Protect what matters most with our comprehensive insurance plans
+                for life, health, and property.
+              </p>
+              <a href="#" class="service-link"
+                >Learn More
+                <svg
+                  width="16"
+                  height="16"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M17 8l4 4m0 0l-4 4m4-4H3"
+                  /></svg
+              ></a>
+            </div>
+            <div class="service-card">
+              <div class="service-icon">
+                <svg
+                  width="32"
+                  height="32"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                  />
+                </svg>
+              </div>
+              <h3>Investments</h3>
+              <p>
+                Grow your wealth with our expert investment advice and
+                diversified portfolio options.
+              </p>
+              <a href="#" class="service-link"
+                >Learn More
+                <svg
+                  width="16"
+                  height="16"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M17 8l4 4m0 0l-4 4m4-4H3"
+                  /></svg
+              ></a>
+            </div>
+            <div class="service-card">
+              <div class="service-icon">
+                <svg
+                  width="32"
+                  height="32"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  />
+                </svg>
+              </div>
+              <h3>Business Banking</h3>
+              <p>
+                Tailored business solutions including accounts, loans, and
+                merchant services for enterprises.
+              </p>
+              <a href="#" class="service-link"
+                >Learn More
+                <svg
+                  width="16"
+                  height="16"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M17 8l4 4m0 0l-4 4m4-4H3"
+                  /></svg
+              ></a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Features Section -->
+      <!--
+      <section class="features">
+        <div class="section-container">
+          <div class="features-wrapper">
+            <div class="features-content">
+              <span class="section-badge">Why Choose Us</span>
+              <h2>Banking Built for the Modern World</h2>
+              <p>We combine cutting-edge technology with personalized service to deliver an exceptional banking experience.</p>
+              <ul class="features-list">
+                <li>
+                  <div class="feature-check">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                  </div>
+                  <div class="feature-text">
+                    <h4>24/7 Online & Mobile Banking</h4>
+                    <p>Access your accounts anytime, anywhere with our secure digital platforms.</p>
+                  </div>
+                </li>
+                <li>
+                  <div class="feature-check">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                  </div>
+                  <div class="feature-text">
+                    <h4>No Hidden Fees</h4>
+                    <p>Transparent pricing with no surprise charges on your accounts.</p>
+                  </div>
+                </li>
+                <li>
+                  <div class="feature-check">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                  </div>
+                  <div class="feature-text">
+                    <h4>Bank-Grade Security</h4>
+                    <p>Your data is protected with 256-bit encryption and multi-factor authentication.</p>
+                  </div>
+                </li>
+                <li>
+                  <div class="feature-check">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                  </div>
+                  <div class="feature-text">
+                    <h4>Dedicated Support</h4>
+                    <p>Our expert team is always ready to help you with your financial needs.</p>
+                  </div>
+                </li>
+              </ul>
+            </div>
+            <div class="features-image">
+              <div class="app-preview">
+                <div class="app-header">
+                  <div class="app-status-bar">
+                    <span>9:41</span>
+                    <div class="status-icons">
+                      <span>|||</span>
+                      <span>WiFi</span>
+                      <span>100%</span>
+                    </div>
+                  </div>
+                  <h3>Good Morning, John</h3>
+                  <p>Here's your account summary</p>
+                </div>
+                <div class="app-balance">
+                  <span class="balance-label">Total Balance</span>
+                  <span class="balance-amount">$24,562.80</span>
+                </div>
+                <div class="app-actions">
+                  <div class="app-action">
+                    <div class="action-icon">
+                      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                    </div>
+                    <span>Send</span>
+                  </div>
+                  <div class="app-action">
+                    <div class="action-icon">
+                      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                    </div>
+                    <span>Request</span>
+                  </div>
+                  <div class="app-action">
+                    <div class="action-icon">
+                      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                    </div>
+                    <span>Cards</span>
+                  </div>
+                  <div class="app-action">
+                    <div class="action-icon">
+                      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                    </div>
+                    <span>More</span>
+                  </div>
+                </div>
+                <div class="app-transactions">
+                  <h4>Recent Transactions</h4>
+                  <div class="transaction">
+                    <div class="transaction-icon grocery">G</div>
+                    <div class="transaction-details">
+                      <span class="transaction-name">Grocery Store</span>
+                      <span class="transaction-date">Today, 2:30 PM</span>
+                    </div>
+                    <span class="transaction-amount negative">-$85.20</span>
+                  </div>
+                  <div class="transaction">
+                    <div class="transaction-icon salary">S</div>
+                    <div class="transaction-details">
+                      <span class="transaction-name">Salary Deposit</span>
+                      <span class="transaction-date">Dec 1, 9:00 AM</span>
+                    </div>
+                    <span class="transaction-amount positive">+$4,500.00</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      -->
+
+      <!-- Loan Calculator Section -->
+      <section class="calculator-section">
+        <div class="section-container">
+          <div class="section-header">
+            <span class="section-badge">Loan Calculator</span>
+            <h2>Calculate Your Monthly Payment</h2>
+            <p>
+              Use our calculator to estimate your loan payments and plan your
+              finances.
+            </p>
+          </div>
+          <div class="calculator-wrapper">
+            <div class="calculator-form">
+              <div class="calc-input-group">
+                <label for="loanAmount">Loan Amount</label>
+                <div class="input-with-prefix">
+                  <span class="prefix">$</span>
+                  <input
+                    type="number"
+                    id="loanAmount"
+                    value="50000"
+                    min="1000"
+                    max="1000000"
+                  />
+                </div>
+                <input
+                  type="range"
+                  id="loanAmountRange"
+                  min="1000"
+                  max="500000"
+                  value="50000"
+                  class="range-slider"
+                />
+              </div>
+              <div class="calc-input-group">
+                <label for="interestRate">Interest Rate</label>
+                <div class="input-with-suffix">
+                  <input
+                    type="number"
+                    id="interestRate"
+                    value="8.5"
+                    min="1"
+                    max="30"
+                    step="0.1"
+                  />
+                  <span class="suffix">%</span>
+                </div>
+                <input
+                  type="range"
+                  id="interestRateRange"
+                  min="1"
+                  max="20"
+                  value="8.5"
+                  step="0.1"
+                  class="range-slider"
+                />
+              </div>
+              <div class="calc-input-group">
+                <label for="loanTerm">Loan Term</label>
+                <div class="input-with-suffix">
+                  <input
+                    type="number"
+                    id="loanTerm"
+                    value="36"
+                    min="6"
+                    max="360"
+                  />
+                  <span class="suffix">months</span>
+                </div>
+                <input
+                  type="range"
+                  id="loanTermRange"
+                  min="6"
+                  max="120"
+                  value="36"
+                  class="range-slider"
+                />
+              </div>
+              <button
+                class="btn-primary btn-lg btn-full"
+                onclick="calculateLoan()"
+              >
+                Calculate Payment
+              </button>
+            </div>
+            <div class="calculator-results">
+              <div class="result-card main-result">
+                <span class="result-label">Monthly Payment</span>
+                <span class="result-value" id="monthlyPayment">$1,576.32</span>
+              </div>
+              <div class="result-details">
+                <div class="result-card">
+                  <span class="result-label">Total Payment</span>
+                  <span class="result-value" id="totalPayment">$56,747.52</span>
+                </div>
+                <div class="result-card">
+                  <span class="result-label">Total Interest</span>
+                  <span class="result-value" id="totalInterest">$6,747.52</span>
+                </div>
+              </div>
+              <a href="/register" class="btn-primary btn-lg btn-full"
+                >Apply for Loan</a
+              >
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Testimonials Section -->
+      <!--
+      <section class="testimonials">
+        <div class="section-container">
+          <div class="section-header">
+            <span class="section-badge">Testimonials</span>
+            <h2>What Our Customers Say</h2>
+            <p>Join millions of satisfied customers who trust AlisterBank with their finances.</p>
+          </div>
+          <div class="testimonials-grid">
+            <div class="testimonial-card">
+              <div class="testimonial-rating">
+                <svg width="20" height="20" fill="#f59e0b" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                <svg width="20" height="20" fill="#f59e0b" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                <svg width="20" height="20" fill="#f59e0b" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                <svg width="20" height="20" fill="#f59e0b" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                <svg width="20" height="20" fill="#f59e0b" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              </div>
+              <p class="testimonial-text">"AlisterBank made buying my first home so easy. The mortgage process was smooth, and the rates were unbeatable. Highly recommend!"</p>
+              <div class="testimonial-author">
+                <div class="author-avatar">SM</div>
+                <div class="author-info">
+                  <span class="author-name">Sarah Mitchell</span>
+                  <span class="author-title">Home Owner</span>
+                </div>
+              </div>
+            </div>
+            <div class="testimonial-card featured">
+              <div class="testimonial-rating">
+                <svg width="20" height="20" fill="#f59e0b" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                <svg width="20" height="20" fill="#f59e0b" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                <svg width="20" height="20" fill="#f59e0b" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                <svg width="20" height="20" fill="#f59e0b" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                <svg width="20" height="20" fill="#f59e0b" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              </div>
+              <p class="testimonial-text">"As a small business owner, I needed a bank that understood my needs. AlisterBank's business solutions have been instrumental in our growth. Their customer service is exceptional!"</p>
+              <div class="testimonial-author">
+                <div class="author-avatar">JC</div>
+                <div class="author-info">
+                  <span class="author-name">James Chen</span>
+                  <span class="author-title">Business Owner</span>
+                </div>
+              </div>
+            </div>
+            <div class="testimonial-card">
+              <div class="testimonial-rating">
+                <svg width="20" height="20" fill="#f59e0b" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                <svg width="20" height="20" fill="#f59e0b" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                <svg width="20" height="20" fill="#f59e0b" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                <svg width="20" height="20" fill="#f59e0b" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                <svg width="20" height="20" fill="#f59e0b" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              </div>
+              <p class="testimonial-text">"The mobile app is fantastic! I can manage all my accounts, pay bills, and transfer money with just a few taps. Banking has never been this convenient."</p>
+              <div class="testimonial-author">
+                <div class="author-avatar">EP</div>
+                <div class="author-info">
+                  <span class="author-name">Emily Parker</span>
+                  <span class="author-title">App User</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      -->
+      <!-- CTA Section -->
+      <section class="cta-section">
+        <div class="section-container">
+          <div class="cta-content">
+            <h2>Ready to Start Your Financial Journey?</h2>
+            <p>
+              Open an account in minutes and experience banking the way it
+              should be.
+            </p>
+            <div class="cta-buttons">
+              <a href="/register" class="btn-white btn-lg">Get Started Today</a>
+              <a href="#" class="btn-outline-white btn-lg">Contact Sales</a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      function calculateLoan() {
+        const principal = parseFloat(
+          document.getElementById("loanAmount").value
+        );
+        const annualRate =
+          parseFloat(document.getElementById("interestRate").value) / 100;
+        const months = parseInt(document.getElementById("loanTerm").value);
+
+        const monthlyRate = annualRate / 12;
+        const monthlyPayment =
+          (principal * (monthlyRate * Math.pow(1 + monthlyRate, months))) /
+          (Math.pow(1 + monthlyRate, months) - 1);
+        const totalPayment = monthlyPayment * months;
+        const totalInterest = totalPayment - principal;
+
+        document.getElementById("monthlyPayment").textContent =
+          "$" + monthlyPayment.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        document.getElementById("totalPayment").textContent =
+          "$" + totalPayment.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        document.getElementById("totalInterest").textContent =
+          "$" + totalInterest.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+      }
+
+      // Sync range sliders with inputs
+      document
+        .getElementById("loanAmountRange")
+        .addEventListener("input", function () {
+          document.getElementById("loanAmount").value = this.value;
+          calculateLoan();
+        });
+      document
+        .getElementById("interestRateRange")
+        .addEventListener("input", function () {
+          document.getElementById("interestRate").value = this.value;
+          calculateLoan();
+        });
+      document
+        .getElementById("loanTermRange")
+        .addEventListener("input", function () {
+          document.getElementById("loanTerm").value = this.value;
+          calculateLoan();
+        });
+
+      // Sync inputs with range sliders
+      document
+        .getElementById("loanAmount")
+        .addEventListener("input", function () {
+          document.getElementById("loanAmountRange").value = this.value;
+          calculateLoan();
+        });
+      document
+        .getElementById("interestRate")
+        .addEventListener("input", function () {
+          document.getElementById("interestRateRange").value = this.value;
+          calculateLoan();
+        });
+      document
+        .getElementById("loanTerm")
+        .addEventListener("input", function () {
+          document.getElementById("loanTermRange").value = this.value;
+          calculateLoan();
+        });
+
+      // Mobile menu toggle
+      document
+        .querySelector(".mobile-menu-btn")
+        .addEventListener("click", function () {
+          document.querySelector(".main-nav").classList.toggle("active");
+          this.classList.toggle("active");
+        });
+    </script>
+  </body>
+</html>

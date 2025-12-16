@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>URL Shortener - AlisterBank</title>
+    <link rel="stylesheet" href="/style.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      .shortener-section {
+        padding: 4rem 0;
+        background: var(--bg-secondary);
+        min-height: calc(100vh - 160px);
+      }
+
+      .shortener-card {
+        background: var(--bg-primary);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-lg);
+        padding: 2.5rem;
+        max-width: 700px;
+        margin: 0 auto;
+      }
+
+      .shortener-card .input-group {
+        margin-bottom: 1.5rem;
+      }
+
+      .shortener-card .input-group label {
+        display: block;
+        font-weight: 600;
+        color: var(--secondary);
+        margin-bottom: 0.5rem;
+      }
+
+      .shortener-card .input-group input {
+        width: 100%;
+        padding: 1rem;
+        border: 2px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        font-size: 1rem;
+        transition: var(--transition);
+      }
+
+      .shortener-card .input-group input:focus {
+        outline: none;
+        border-color: var(--primary);
+      }
+
+      .form-hint {
+        display: block;
+        margin-top: 0.5rem;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+      }
+
+      .error-message {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1rem 1.25rem;
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid var(--danger);
+        border-radius: var(--radius-lg);
+        margin-top: 1.5rem;
+        color: var(--danger);
+      }
+
+      .error-icon {
+        font-size: 1.25rem;
+      }
+
+      .success-message {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1rem 1.25rem;
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid var(--success);
+        border-radius: var(--radius-lg);
+        margin-top: 1.5rem;
+        color: var(--success);
+      }
+
+      .success-icon {
+        font-size: 1.25rem;
+      }
+
+      .result-container {
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid var(--border-color);
+      }
+
+      .result-container h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--secondary);
+        margin-bottom: 1rem;
+      }
+
+      .urls-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .urls-list li {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.25rem;
+        background: var(--bg-secondary);
+        border-radius: var(--radius-lg);
+        transition: var(--transition);
+      }
+
+      .urls-list li:hover {
+        background: var(--bg-tertiary);
+      }
+
+      .url-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        flex: 1;
+        min-width: 0;
+      }
+
+      .url-info a {
+        color: var(--primary);
+        font-weight: 600;
+        word-break: break-all;
+      }
+
+      .url-info a:hover {
+        text-decoration: underline;
+      }
+
+      .url-original {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+      }
+
+      .delete-form {
+        flex-shrink: 0;
+        margin-left: 1rem;
+      }
+
+      .btn-delete {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(239, 68, 68, 0.1);
+        color: var(--danger);
+        border: none;
+        border-radius: var(--radius);
+        cursor: pointer;
+        transition: var(--transition);
+        font-size: 1rem;
+      }
+
+      .btn-delete:hover {
+        background: var(--danger);
+        color: white;
+      }
+
+      .btn-edit {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(59, 130, 246, 0.1);
+        color: var(--primary);
+        border: none;
+        border-radius: var(--radius);
+        cursor: pointer;
+        transition: var(--transition);
+        font-size: 1rem;
+        text-decoration: none;
+      }
+
+      .btn-edit:hover {
+        background: var(--primary);
+        color: white;
+      }
+
+      .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        flex-shrink: 0;
+        margin-left: 1rem;
+      }
+
+      .btn-shorten {
+        width: 100%;
+        padding: 1rem;
+        background: var(--primary);
+        color: white;
+        border: none;
+        border-radius: var(--radius-lg);
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+      }
+
+      .btn-shorten:hover {
+        background: var(--primary-dark);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+      }
+
+      @media (max-width: 768px) {
+        .shortener-card {
+          padding: 1.5rem;
+          margin: 0 1rem;
+        }
+
+        .url-info {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 0.25rem;
+        }
+
+        .urls-list li {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 0.75rem;
+        }
+
+        .action-buttons {
+          margin-left: 0;
+          align-self: flex-end;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <%- include('header') %>
+
+    <main>
+      <section class="shortener-section">
+        <div class="section-container">
+          <div class="section-header">
+            <span class="section-badge">URL Shortener</span>
+            <h2>Create Short Links</h2>
+            <p>Transform long URLs into short, memorable links in seconds</p>
+          </div>
+
+          <div class="shortener-card">
+            <form action="/shortner" method="post">
+              <div class="input-group">
+                <label for="url">Enter URL</label>
+                <input
+                  type="url"
+                  id="url"
+                  name="url"
+                  placeholder="https://example.com/very-long-url"
+                  value="<%= typeof formData !== 'undefined' && formData.url ? formData.url : '' %>"
+                  required
+                />
+              </div>
+
+              <div class="input-group">
+                <label for="shortCode">Custom Shortcode (optional)</label>
+                <input
+                  type="text"
+                  id="shortCode"
+                  name="shortCode"
+                  placeholder="myshortcode"
+                  pattern="[a-zA-Z0-9-_]+"
+                  title="Only letters, numbers, hyphens and underscores allowed"
+                  value="<%= typeof formData !== 'undefined' && formData.shortCode ? formData.shortCode : '' %>"
+                />
+                <small class="form-hint"
+                  >Leave blank for auto-generated code</small
+                >
+              </div>
+
+              <button type="submit" class="btn-shorten">
+                <span>Shorten URL</span>
+              </button>
+            </form>
+
+            <% if (typeof error !== 'undefined' && error.length > 0) { %>
+            <div class="error-message">
+              <span class="error-icon">!</span>
+              <span class="error-text"><%= error %></span>
+            </div>
+            <% } %> <% if (typeof success !== 'undefined' && success.length > 0)
+            { %>
+            <div class="success-message">
+              <span class="success-icon">&#10003;</span>
+              <span class="success-text"><%= success %></span>
+            </div>
+            <% } %> <% if (typeof links !== 'undefined' && links.length > 0) {
+            %>
+            <div class="result-container">
+              <h3>Your Shortened URLs</h3>
+              <ul class="urls-list">
+                <% links.forEach(function(link) { const displayUrl =
+                link.url.length > 30 ? link.url.substring(0, 30) + "..." :
+                link.url; %>
+                <li>
+                  <div class="url-info">
+                    <a href="/shortCode/<%= link.shortCode %>" target="_blank"
+                      ><%= host + "/" + link.shortCode %></a
+                    >
+                    <span class="url-original"><%= displayUrl %></span>
+                  </div>
+                  <div class="action-buttons">
+                    <a
+                      href="/edit/<%= link.id %>"
+                      class="btn-edit"
+                      title="Edit this short link"
+                    >
+                      &#9998;
+                    </a>
+                    <form
+                      action="/delete/<%= link.id %>"
+                      method="POST"
+                      class="delete-form"
+                    >
+                      <button
+                        type="submit"
+                        class="btn-delete"
+                        title="Delete this short link"
+                      >
+                        &#10005;
+                      </button>
+                    </form>
+                  </div>
+                </li>
+                <% }); %>
+              </ul>
+            </div>
+            <% } %>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <%- include('footer') %>
+  </body>
+</html>

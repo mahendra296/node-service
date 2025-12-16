@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Edit Short Link - AlisterBank</title>
+    <link rel="stylesheet" href="/style.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      .shortener-section {
+        padding: 4rem 0;
+        background: var(--bg-secondary);
+        min-height: calc(100vh - 160px);
+      }
+
+      .shortener-card {
+        background: var(--bg-primary);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-lg);
+        padding: 2.5rem;
+        max-width: 700px;
+        margin: 0 auto;
+      }
+
+      .shortener-card .input-group {
+        margin-bottom: 1.5rem;
+      }
+
+      .shortener-card .input-group label {
+        display: block;
+        font-weight: 600;
+        color: var(--secondary);
+        margin-bottom: 0.5rem;
+      }
+
+      .shortener-card .input-group input {
+        width: 100%;
+        padding: 1rem;
+        border: 2px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        font-size: 1rem;
+        transition: var(--transition);
+      }
+
+      .shortener-card .input-group input:focus {
+        outline: none;
+        border-color: var(--primary);
+      }
+
+      .form-hint {
+        display: block;
+        margin-top: 0.5rem;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+      }
+
+      .error-message {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1rem 1.25rem;
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid var(--danger);
+        border-radius: var(--radius-lg);
+        margin-bottom: 1.5rem;
+        color: var(--danger);
+      }
+
+      .error-icon {
+        font-size: 1.25rem;
+      }
+
+      .btn-update {
+        width: 100%;
+        padding: 1rem;
+        background: var(--primary);
+        color: white;
+        border: none;
+        border-radius: var(--radius-lg);
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+      }
+
+      .btn-update:hover {
+        background: var(--primary-dark);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+      }
+
+      .btn-cancel {
+        width: 100%;
+        padding: 1rem;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        border: 2px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+        text-decoration: none;
+        text-align: center;
+        display: block;
+        margin-top: 1rem;
+      }
+
+      .btn-cancel:hover {
+        background: var(--bg-tertiary);
+        border-color: var(--text-secondary);
+      }
+
+      @media (max-width: 768px) {
+        .shortener-card {
+          padding: 1.5rem;
+          margin: 0 1rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <%- include('header') %>
+
+    <main>
+      <section class="shortener-section">
+        <div class="section-container">
+          <div class="section-header">
+            <span class="section-badge">Edit Link</span>
+            <h2>Edit Short Link</h2>
+            <p>Update your shortened URL details</p>
+          </div>
+
+          <div class="shortener-card">
+            <% if (typeof error !== 'undefined' && error) { %>
+            <div class="error-message">
+              <span class="error-icon">!</span>
+              <span class="error-text"><%= error %></span>
+            </div>
+            <% } %>
+
+            <form action="/edit/<%= link.id %>" method="post">
+              <div class="input-group">
+                <label for="url">URL</label>
+                <input
+                  type="url"
+                  id="url"
+                  name="url"
+                  placeholder="https://example.com/very-long-url"
+                  value="<%= link.url %>"
+                  required
+                />
+              </div>
+
+              <div class="input-group">
+                <label for="shortCode">Short Code</label>
+                <input
+                  type="text"
+                  id="shortCode"
+                  name="shortCode"
+                  placeholder="myshortcode"
+                  pattern="[a-zA-Z0-9-_]+"
+                  title="Only letters, numbers, hyphens and underscores allowed"
+                  value="<%= link.shortCode %>"
+                  required
+                />
+                <small class="form-hint"
+                  >Only letters, numbers, hyphens and underscores allowed</small
+                >
+              </div>
+
+              <button type="submit" class="btn-update">
+                <span>Update Link</span>
+              </button>
+            </form>
+
+            <a href="/shortner" class="btn-cancel">Cancel</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <%- include('footer') %>
+  </body>
+</html>

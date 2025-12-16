@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Open Account - AlisterBank</title>
+    <link rel="stylesheet" href="/style.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <%- include('header') %>
+
+    <main
+      style="
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        background: var(--bg-secondary);
+      "
+    >
+      <div class="auth-container">
+        <section class="form-section active" id="registerForm">
+          <h2>Open Your Account</h2>
+          <p>Start your financial journey with AlisterBank today</p>
+
+          <% if (error && error.length > 0) { %>
+            <div class="alert alert-error">
+              <%= error[0] %>
+            </div>
+          <% } %>
+
+          <form action="/register" method="POST">
+            <div class="input-group">
+              <label for="register-name">Full Name</label>
+              <input
+                type="text"
+                id="register-name"
+                name="name"
+                placeholder="Enter your full name"
+                value="<%= formData.name || '' %>"
+                required
+              />
+            </div>
+
+            <div class="input-group">
+              <label for="register-email">Email Address</label>
+              <input
+                type="email"
+                id="register-email"
+                name="email"
+                placeholder="Enter your email"
+                value="<%= formData.email || '' %>"
+                required
+              />
+            </div>
+
+            <div class="input-group">
+              <label for="register-phone">Phone Number</label>
+              <input
+                type="tel"
+                id="register-phone"
+                name="phone"
+                placeholder="Enter your phone number"
+                value="<%= formData.phone || '' %>"
+                required
+              />
+            </div>
+
+            <div class="input-group">
+              <label for="register-password">Password</label>
+              <input
+                type="password"
+                id="register-password"
+                name="password"
+                placeholder="Create a secure password"
+                required
+              />
+            </div>
+
+            <div class="checkbox-group">
+              <input type="checkbox" id="terms" name="terms" required />
+              <label for="terms"
+                >I agree to the Terms of Service and Privacy Policy</label
+              >
+            </div>
+
+            <button type="submit" class="btn">Create Account</button>
+          </form>
+
+          <div class="switch-text">
+            Already have an account? <a href="/login">Sign In</a>
+          </div>
+        </section>
+
+        <aside class="side-panel">
+          <svg
+            width="80"
+            height="80"
+            viewBox="0 0 40 40"
+            fill="none"
+            style="margin-bottom: 2rem"
+          >
+            <rect width="40" height="40" rx="8" fill="rgba(255,255,255,0.2)" />
+            <path d="M20 8L32 14V18H8V14L20 8Z" fill="white" />
+            <rect x="10" y="20" width="4" height="12" fill="white" />
+            <rect x="18" y="20" width="4" height="12" fill="white" />
+            <rect x="26" y="20" width="4" height="12" fill="white" />
+            <rect x="8" y="32" width="24" height="3" fill="white" />
+          </svg>
+          <h3>Why AlisterBank?</h3>
+          <p>
+            Enjoy zero fees, competitive rates, 24/7 support, and award-winning
+            mobile banking. Your finances, simplified.
+          </p>
+          <a href="/login" class="switch-btn">Sign In Instead</a>
+        </aside>
+      </div>
+    </main>
+
+    <%- include('footer') %>
+  </body>
+</html>
