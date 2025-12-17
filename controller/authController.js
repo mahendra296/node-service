@@ -1,13 +1,24 @@
 import {
+  ACCESS_TOKEN_EXPIRY,
+  REFRESH_TOKEN_EXPIRY,
+} from "../config/constant.js";
+import {
   createUser,
   getUserByEmail,
   hashPassword,
   verifyPassword,
   generateJwtToken,
   generateRefreshToken,
+  createSession,
+  refreshJwtToken,
   verifyRefreshToken,
+  deleteRefreshTokenById,
+  deleteRefreshTokenByUserId,
 } from "../service/auth-service.js";
-import { validateRegistration } from "../validators/auth-validator.js";
+import {
+  validateLogin,
+  validateRegistration,
+} from "../validators/auth-validator.js";
 
 export const getDashboardPage = async (req, res) => {
   try {
@@ -44,7 +55,19 @@ export const getLoginPage = async (req, res) => {
 };
 
 export const submitLogin = async (req, res) => {
+  const validation = validateLogin(req.body);
+  if (!validation.success) {
+    // Safely access the first error with fallback
+    const errorMessage =
+      validation.error.errors?.[0]?.message ||
+      validation.error.issues?.[0]?.message ||
+      "Validation failed";
+    req.flash("error", errorMessage);
+    return res.redirect("/login");
+  }
+
   const { email, password } = req.body;
+
   const user = await getUserByEmail(email);
 
   if (!user) {
@@ -58,22 +81,34 @@ export const submitLogin = async (req, res) => {
     return res.redirect("/login");
   }
 
+  const session = await createSession(user.id, {
+    ip: req.clientIp,
+    userAgent: req.headers["user-agent"],
+  });
+
   const jwtToken = await generateJwtToken({
     id: user.id,
     name: user.name,
     email: user.email,
+    refreshTokenId: session.id,
   });
-  const refreshToken = await generateRefreshToken({
-    id: user.id,
-    name: user.name,
-    email: user.email,
+
+  const refreshTokenValue = await generateRefreshToken({
+    refreshTokenId: session.id,
   });
-  res.cookie("isLoggedIn", true);
-  res.cookie("access_token", jwtToken, { httpOnly: true });
-  res.cookie("refresh_token", refreshToken, {
-    httpOnly: true,
-    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+
+  const baseConfig = { httpOnly: true, secure: true };
+
+  res.cookie("access_token", jwtToken, {
+    ...baseConfig,
+    maxAge: ACCESS_TOKEN_EXPIRY,
   });
+
+  res.cookie("refresh_token", refreshTokenValue, {
+    ...baseConfig,
+    maxAge: REFRESH_TOKEN_EXPIRY,
+  });
+
   res.redirect("/");
 };
 
@@ -129,33 +164,45 @@ export const submitRegistration = async (req, res) => {
   }
 };
 
-export const logout = (req, res) => {
+export const logout = async (req, res) => {
+  try {
+    const refreshToken = req.cookies?.refresh_token;
+    if (refreshToken) {
+      const decodedToken = await verifyRefreshToken(refreshToken);
+      if (decodedToken?.refreshTokenId) {
+        await deleteRefreshTokenById(decodedToken.refreshTokenId);
+      }
+    }
+  } catch (error) {
+    // Token might be invalid/expired, but we still proceed with logout
+    console.error("Error during logout:", error.message);
+  }
+
   res.clearCookie("access_token");
   res.clearCookie("refresh_token");
-  res.clearCookie("isLoggedIn");
   return res.redirect("/login");
 };
 
 export const refreshToken = async (req, res) => {
-  const token = req.cookies?.refresh_token;
-
-  if (!token) {
-    return res.status(401).json({
-      success: false,
-      message: "No refresh token provided",
-    });
-  }
-
   try {
-    const decoded = await verifyRefreshToken(token);
+    const refreshToken = req.cookies?.refresh_token;
+    const { newAccessToken, newRefreshToken, user } = await refreshJwtToken(
+      refreshToken
+    );
 
-    const newAccessToken = await generateJwtToken({
-      id: decoded.id,
-      name: decoded.name,
-      email: decoded.email,
+    req.user = user;
+
+    const baseConfig = { httpOnly: true, secure: true };
+
+    res.cookie("access_token", newAccessToken, {
+      ...baseConfig,
+      maxAge: ACCESS_TOKEN_EXPIRY,
     });
 
-    res.cookie("access_token", newAccessToken, { httpOnly: true });
+    res.cookie("refresh_token", newRefreshToken, {
+      ...baseConfig,
+      maxAge: REFRESH_TOKEN_EXPIRY,
+    });
 
     return res.status(200).json({
       success: true,
@@ -164,11 +211,32 @@ export const refreshToken = async (req, res) => {
   } catch (error) {
     res.clearCookie("access_token");
     res.clearCookie("refresh_token");
-    res.clearCookie("isLoggedIn");
 
     return res.status(401).json({
       success: false,
       message: "Invalid or expired refresh token",
     });
   }
+};
+
+export const logoutAllDevices = async (req, res) => {
+  const userId = req.user?.id;
+
+  if (!userId) {
+    return res.status(401).json({
+      success: false,
+      message: "Not authenticated",
+    });
+  }
+
+  // Delete all refresh tokens for this user
+  await deleteRefreshTokenByUserId(userId);
+
+  res.clearCookie("access_token");
+  res.clearCookie("refresh_token");
+
+  return res.status(200).json({
+    success: true,
+    message: "Logged out from all devices",
+  });
 };

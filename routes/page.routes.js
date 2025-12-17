@@ -18,6 +18,7 @@ router
 
 router.get("/logout", authController.logout);
 router.post("/refresh-token", authController.refreshToken);
+router.post("/logout-all-devices", authController.logoutAllDevices);
 
 // URL Shortener routes
 router

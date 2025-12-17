@@ -1,8 +1,12 @@
-import { verifyJwtToken } from "../service/auth-service.js";
+import {
+  ACCESS_TOKEN_EXPIRY,
+  REFRESH_TOKEN_EXPIRY,
+} from "../config/constant.js";
+import { verifyJwtToken, refreshJwtToken } from "../service/auth-service.js";
 
 const publicRoutes = ["/login", "/register", "/", "/refresh-token"];
 
-export const verifyAuthToken = async (req, res, next) => {
+/* export const verifyAuthToken = async (req, res, next) => {
   const token = req.cookies?.access_token;
   const refreshToken = req.cookies?.refresh_token;
 
@@ -20,9 +24,10 @@ export const verifyAuthToken = async (req, res, next) => {
 
     // Check if this is an API request (expects JSON)
     const isApiRequest =
-      req.xhr ||
-      req.headers.accept?.includes("application/json") ||
-      req.headers["content-type"]?.includes("application/json");
+      (req.xhr ||
+        req.headers.accept?.includes("application/json") ||
+        req.headers["content-type"]?.includes("application/json")) ??
+      false;
 
     // If refresh token exists and it's an API request, signal to refresh
     if (refreshToken && isApiRequest && !publicRoutes.includes(req.path)) {
@@ -38,6 +43,57 @@ export const verifyAuthToken = async (req, res, next) => {
     if (!publicRoutes.includes(req.path)) {
       req.flash("error", "Session expired. Please login again.");
       return res.redirect("/login");
+    }
+  }
+
+  return next();
+}; */
+
+export const verifyAuthToken = async (req, res, next) => {
+  const accessToken = req.cookies?.access_token;
+  const refreshToken = req.cookies?.refresh_token;
+
+  if (!accessToken && !refreshToken) {
+    req.user = null;
+    return next();
+  }
+
+  if (accessToken) {
+    const decodedToken = await verifyJwtToken(accessToken);
+    req.user = decodedToken;
+    return next();
+  }
+
+  if (refreshToken) {
+    try {
+      const { newAccessToken, newRefreshToken, user } = await refreshJwtToken(
+        refreshToken
+      );
+      req.user = user;
+
+      const baseConfig = { httpOnly: true, secure: true };
+
+      res.cookie("access_token", newAccessToken, {
+        ...baseConfig,
+        maxAge: ACCESS_TOKEN_EXPIRY,
+      });
+
+      res.cookie("refresh_token", newRefreshToken, {
+        ...baseConfig,
+        maxAge: REFRESH_TOKEN_EXPIRY,
+      });
+
+      return next();
+    } catch (error) {
+      console.error(error);
+      req.user = null;
+      res.clearCookie("access_token");
+      res.clearCookie("refresh_token");
+
+      if (!publicRoutes.includes(req.path)) {
+        req.flash("error", "Session expired. Please login again.");
+        return res.redirect("/login");
+      }
     }
   }
 

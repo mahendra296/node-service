@@ -5,7 +5,8 @@ A full-stack Node.js web application featuring URL shortening functionality with
 ## Features
 
 - **User Authentication**: Secure registration and login with JWT tokens
-- **Token Refresh**: Stateless refresh token mechanism for seamless session management
+- **Token Refresh**: Database-managed refresh tokens with revocation support
+- **Multi-Device Logout**: Ability to logout from all devices at once
 - **URL Shortener**: Create, edit, and delete shortened URLs
 - **Password Security**: Argon2 password hashing (winner of the Password Hashing Competition)
 - **Input Validation**: Schema-based validation using Zod
@@ -146,6 +147,7 @@ node-service/
 | `POST` | `/login` | Submit login credentials |
 | `GET` | `/logout` | Logout user and clear tokens |
 | `POST` | `/refresh-token` | Refresh access token |
+| `POST` | `/logout-all-devices` | Revoke all refresh tokens for user |
 
 ### URL Shortener
 
@@ -170,7 +172,8 @@ node-service/
 4. On success:
    - Access token generated (1 hour expiry)
    - Refresh token generated (30 days expiry)
-   - Both stored as HTTP-only cookies
+   - Refresh token saved to database with user agent info
+   - Both tokens stored as HTTP-only cookies
 5. User redirected to dashboard
 ```
 
@@ -180,21 +183,30 @@ node-service/
 1. Access token expires (after 1 hour)
 2. API requests return 401 with code "TOKEN_EXPIRED"
 3. Client calls POST /refresh-token
-4. Server validates refresh token
-5. New access token issued
-6. Client retries original request
+4. Server validates refresh token (JWT signature + database lookup)
+5. If valid: new access token issued
+6. If invalid/revoked: all cookies cleared, 401 returned
+7. Client retries original request or redirects to login
 ```
 
 ## JWT Token Refresh
 
-The application implements a stateless JWT refresh token mechanism:
+The application implements a database-managed JWT refresh token mechanism with support for token revocation and multi-device session management.
 
 ### Token Configuration
 
 | Token Type | Expiration | Storage |
 |------------|------------|---------|
 | Access Token | 1 hour | HTTP-only cookie (`access_token`) |
-| Refresh Token | 30 days | HTTP-only cookie (`refresh_token`) |
+| Refresh Token | 30 days | HTTP-only cookie + Database (`refresh_token`) |
+
+### Key Features
+
+- **Token Revocation**: Refresh tokens can be revoked by deleting from database
+- **Multi-Device Support**: Each login creates a new refresh token entry
+- **Logout All Devices**: Revoke all refresh tokens for a user at once
+- **Session Tracking**: User agent and IP address stored with each refresh token
+- **IP Detection**: Uses `request-ip` package for accurate client IP detection (supports proxies)
 
 ### Refresh Endpoint
 
@@ -218,6 +230,30 @@ Cookie: refresh_token=<token>
 {
   "success": false,
   "message": "Invalid or expired refresh token"
+}
+```
+
+### Logout All Devices Endpoint
+
+**Request:**
+```http
+POST /logout-all-devices
+Cookie: access_token=<token>
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Logged out from all devices"
+}
+```
+
+**Error Response (401):**
+```json
+{
+  "success": false,
+  "message": "Not authenticated"
 }
 ```
 
@@ -281,11 +317,29 @@ async function apiRequest(url, options = {}) {
 | `created_at` | TIMESTAMP | Default: NOW() |
 | `updated_at` | TIMESTAMP | Auto-update on modification |
 
+### Refresh Tokens Table
+
+| Column | Type | Constraints |
+|--------|------|-------------|
+| `id` | BIGINT | Primary Key, Auto Increment |
+| `token` | VARCHAR(500) | Not Null, Unique |
+| `user_id` | BIGINT | Foreign Key → users.id (CASCADE DELETE) |
+| `valid` | BOOLEAN | Not Null, Default: true |
+| `expires_at` | TIMESTAMP | Not Null |
+| `user_agent` | TEXT | Nullable (browser/device info) |
+| `ip` | VARCHAR(255) | Nullable (client IP address) |
+| `created_at` | TIMESTAMP | Default: NOW() |
+| `updated_at` | TIMESTAMP | Auto-update on modification |
+
 ## Security Features
 
 - **Password Hashing**: Argon2 algorithm (PHC winner, resistant to GPU attacks)
 - **HTTP-only Cookies**: Tokens not accessible via JavaScript (XSS protection)
 - **Separate Token Secrets**: Access and refresh tokens use different secrets
+- **Token Revocation**: Database-stored refresh tokens can be revoked anytime
+- **Cascade Delete**: When user is deleted, all refresh tokens are automatically removed
+- **IP Address Tracking**: Client IP captured using `request-ip` for session monitoring
+- **User Agent Logging**: Browser/device info stored for security auditing
 - **Input Validation**: All user inputs validated with Zod schemas
 - **Session Management**: Express session with configurable expiry
 

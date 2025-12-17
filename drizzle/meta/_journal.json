@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "5",
-      "when": 1765436802283,
-      "tag": "0000_reflective_jubilee",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "5",
-      "when": 1765441289772,
-      "tag": "0001_stiff_nemesis",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "5",
-      "when": 1765866898391,
-      "tag": "0002_thin_shen",
+      "when": 1765952699618,
+      "tag": "0000_colorful_outlaw_kid",
       "breakpoints": true
     }
   ]

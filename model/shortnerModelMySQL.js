@@ -53,3 +53,11 @@ export const updateLink = async (id, { url, shortCode }) => {
     .where(eq(shortLinkTable.id, id));
   return result;
 };
+
+export const saveRefreshToken = async ({ url, finalShortCode, userId }) => {
+  const result = db
+    .insert(shortLinkTable)
+    .values({ shortCode: finalShortCode, url: url, userId: userId });
+
+  return result;
+};

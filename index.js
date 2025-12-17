@@ -1,13 +1,18 @@
 import express from "express";
+import cookieParser from "cookie-parser";
 import session from "express-session";
 import flash from "connect-flash";
+import requestIp from "request-ip";
+
 import { shortenRouter } from "./routes/page.routes.js";
-import cookieParser from "cookie-parser";
 import { verifyAuthToken } from "./middlewares/verify-auth-middleware.js";
 
 const app = express();
 
+// parse cookies
 app.use(cookieParser());
+
+// session management
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "your-secret-key",
@@ -17,7 +22,13 @@ app.use(
   })
 );
 app.use(flash());
+
+// Get Ip address for user request
+app.use(requestIp.mw());
+
+// verify auth token for each request
 app.use(verifyAuthToken);
+
 app.use((req, res, next) => {
   res.locals.user = req.user;
   return next();
