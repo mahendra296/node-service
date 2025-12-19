@@ -6,6 +6,7 @@ import requestIp from "request-ip";
 
 import { shortenRouter } from "./routes/page.routes.js";
 import { verifyAuthToken } from "./middlewares/verify-auth-middleware.js";
+import { loadSessionsIntoCache } from "./service/auth-service.js";
 
 const app = express();
 
@@ -26,6 +27,10 @@ app.use(flash());
 // Get Ip address for user request
 app.use(requestIp.mw());
 
+// Serve static files before auth check (CSS, JS, images don't need authentication)
+app.use(express.static("public"));
+app.use(express.urlencoded({ extended: true }));
+
 // verify auth token for each request
 app.use(verifyAuthToken);
 
@@ -33,8 +38,6 @@ app.use((req, res, next) => {
   res.locals.user = req.user;
   return next();
 });
-app.use(express.static("public"));
-app.use(express.urlencoded({ extended: true }));
 app.set("view engine", "ejs");
 
 app.use(shortenRouter);
@@ -44,6 +47,15 @@ app.use((req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+
+// Load active sessions into cache before starting server
+loadSessionsIntoCache()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Server is running on port ${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.error("Failed to load sessions into cache:", error);
+    process.exit(1);
+  });

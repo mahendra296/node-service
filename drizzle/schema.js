@@ -25,6 +25,7 @@ export const usersTable = mysqlTable("users", {
   name: varchar({ length: 255 }).notNull(),
   email: varchar({ length: 255 }).notNull().unique(),
   password: varchar({ length: 255 }).notNull(),
+  isEmailVerified: boolean("is_email_verified").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
@@ -39,6 +40,17 @@ export const refreshTokensTable = mysqlTable("refresh_tokens", {
   ip: varchar({ length: 255 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export const verificationCodesTable = mysqlTable("verification_codes", {
+  id: bigint({ mode: "number" }).autoincrement().primaryKey(),
+  userId: bigint("user_id", { mode: "number" })
+    .notNull()
+    .references(() => usersTable.id, { onDelete: "cascade" }),
+  code: varchar({ length: 10 }).notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  sendType: varchar("send_type", { length: 10 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const userRelation = relations(usersTable, ({ many }) => ({

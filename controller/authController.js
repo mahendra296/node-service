@@ -5,6 +5,7 @@ import {
 import {
   createUser,
   getUserByEmail,
+  getUserById,
   hashPassword,
   verifyPassword,
   generateJwtToken,
@@ -14,11 +15,17 @@ import {
   verifyRefreshToken,
   deleteRefreshTokenById,
   deleteRefreshTokenByUserId,
+  getSessionsByUserId,
 } from "../service/auth-service.js";
 import {
   validateLogin,
   validateRegistration,
 } from "../validators/auth-validator.js";
+import { validateVerificationCode } from "../validators/verification-validator.js";
+import {
+  createVerificationCode,
+  verifyCode,
+} from "../service/verification-service.js";
 
 export const getDashboardPage = async (req, res) => {
   try {
@@ -31,8 +38,7 @@ export const getDashboardPage = async (req, res) => {
     ); */
     console.log(req.cookies);
 
-    let isLoggedIn = req.cookies?.isLoggedIn ?? false;
-    return res.render("index", { isLoggedIn });
+    return res.render("index");
   } catch (error) {
     console.error(error);
     return res.status(500).send("Internal server error.");
@@ -235,8 +241,155 @@ export const logoutAllDevices = async (req, res) => {
   res.clearCookie("access_token");
   res.clearCookie("refresh_token");
 
-  return res.status(200).json({
-    success: true,
-    message: "Logged out from all devices",
-  });
+  return res.redirect("/login");
+};
+
+export const getProfilePage = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.redirect("/login");
+    }
+
+    // Fetch full user data including createdAt
+    const fullUser = await getUserById(req.user.id);
+    if (!fullUser) {
+      return res.redirect("/login");
+    }
+
+    // Fetch all active sessions for the user
+    const sessions = await getSessionsByUserId(req.user.id);
+    const currentSessionId = req.user.refreshTokenId;
+
+    return res.render("profile", {
+      profileUser: fullUser,
+      sessions,
+      currentSessionId,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send("Internal server error.");
+  }
+};
+
+export const deleteSession = async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      req.flash("error", "Not authenticated");
+      return res.redirect("/login");
+    }
+
+    // Verify the session belongs to the user
+    const sessions = await getSessionsByUserId(userId);
+    const sessionToDelete = sessions.find((s) => s.id === parseInt(sessionId));
+
+    if (!sessionToDelete) {
+      req.flash("error", "Session not found");
+      return res.redirect("/profile");
+    }
+
+    // Delete the session
+    await deleteRefreshTokenById(parseInt(sessionId));
+
+    // If deleting current session, clear cookies and redirect to login
+    if (req.user.refreshTokenId === parseInt(sessionId)) {
+      res.clearCookie("access_token");
+      res.clearCookie("refresh_token");
+      return res.redirect("/login");
+    }
+
+    return res.redirect("/profile");
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send("Internal server error.");
+  }
+};
+
+export const sendVerificationCode = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Not authenticated",
+      });
+    }
+
+    const user = await getUserById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    if (user.isEmailVerified) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is already verified",
+      });
+    }
+
+    await createVerificationCode(userId, user.email, "EMAIL");
+
+    return res.status(200).json({
+      success: true,
+      message: "Verification code sent to your email",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to send verification code",
+    });
+  }
+};
+
+export const verifyEmailCode = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Not authenticated",
+      });
+    }
+
+    const validation = validateVerificationCode(req.body);
+    if (!validation.success) {
+      const errorMessage =
+        validation.error.errors?.[0]?.message ||
+        validation.error.issues?.[0]?.message ||
+        "Invalid verification code";
+      return res.status(400).json({
+        success: false,
+        message: errorMessage,
+      });
+    }
+
+    const { code } = req.body;
+    const result = await verifyCode(userId, code);
+
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        message: result.message,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Email verified successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to verify email",
+    });
+  }
 };

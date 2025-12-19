@@ -11,10 +11,19 @@ import {
   validateShortner,
   validateShortnerUpdate,
 } from "../validators/shortner-validator.js";
+import { getUserById } from "../service/auth-service.js";
 
 export const getShortnerPage = async (req, res) => {
   try {
     console.log("Request recived in DB");
+
+    // Check if email is verified
+    const user = await getUserById(req.user.id);
+    if (!user.isEmailVerified) {
+      req.flash("error", "Please verify your email to access URL shortener.");
+      return res.redirect("/profile");
+    }
+
     const links = await getAllShortLinks(req.user.id);
 
     // Get success or error from query parameters
@@ -30,6 +39,13 @@ export const getShortnerPage = async (req, res) => {
 
 export const postShortner = async (req, res) => {
   try {
+    // Check if email is verified
+    const user = await getUserById(req.user.id);
+    if (!user.isEmailVerified) {
+      req.flash("error", "Please verify your email to create short links.");
+      return res.redirect("/profile");
+    }
+
     const { url, shortCode } = req.body;
     console.log(`Url : ${url} and shortCode : ${shortCode}`);
 
@@ -119,6 +135,13 @@ export const deleteShortLink = async (req, res) => {
 
 export const getEditPage = async (req, res) => {
   try {
+    // Check if email is verified
+    const user = await getUserById(req.user.id);
+    if (!user.isEmailVerified) {
+      req.flash("error", "Please verify your email to edit short links.");
+      return res.redirect("/profile");
+    }
+
     const { id } = req.params;
     const link = await getLinkById(parseInt(id));
 
@@ -147,6 +170,13 @@ export const getEditPage = async (req, res) => {
 
 export const postEditShortLink = async (req, res) => {
   try {
+    // Check if email is verified
+    const user = await getUserById(req.user.id);
+    if (!user.isEmailVerified) {
+      req.flash("error", "Please verify your email to edit short links.");
+      return res.redirect("/profile");
+    }
+
     const { id } = req.params;
     const { url, shortCode } = req.body;
 

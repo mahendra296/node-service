@@ -2,7 +2,11 @@ import {
   ACCESS_TOKEN_EXPIRY,
   REFRESH_TOKEN_EXPIRY,
 } from "../config/constant.js";
-import { verifyJwtToken, refreshJwtToken } from "../service/auth-service.js";
+import {
+  verifyJwtToken,
+  refreshJwtToken,
+  isSessionActive,
+} from "../service/auth-service.js";
 
 const publicRoutes = ["/login", "/register", "/", "/refresh-token"];
 
@@ -55,13 +59,40 @@ export const verifyAuthToken = async (req, res, next) => {
 
   if (!accessToken && !refreshToken) {
     req.user = null;
+    // For protected routes, redirect to login directly
+    if (!publicRoutes.includes(req.path)) {
+      return res.redirect("/login");
+    }
     return next();
   }
 
   if (accessToken) {
-    const decodedToken = await verifyJwtToken(accessToken);
-    req.user = decodedToken;
-    return next();
+    try {
+      const decodedToken = await verifyJwtToken(accessToken);
+
+      // Verify the session still exists using in-memory cache (O(1) lookup)
+      // This ensures logout from all devices works immediately without DB call
+      if (decodedToken.refreshTokenId) {
+        if (!isSessionActive(decodedToken.refreshTokenId)) {
+          // Session was invalidated (user logged out from all devices)
+          req.user = null;
+          res.clearCookie("access_token");
+          res.clearCookie("refresh_token");
+
+          if (!publicRoutes.includes(req.path)) {
+            req.flash("error", "Session expired. Please login again.");
+            return res.redirect("/login");
+          }
+          return next();
+        }
+      }
+
+      req.user = decodedToken;
+      return next();
+    } catch (error) {
+      // Access token is invalid/expired, try refresh token below
+      res.clearCookie("access_token");
+    }
   }
 
   if (refreshToken) {

@@ -19,6 +19,10 @@ router
 router.get("/logout", authController.logout);
 router.post("/refresh-token", authController.refreshToken);
 router.post("/logout-all-devices", authController.logoutAllDevices);
+router.get("/profile", authController.getProfilePage);
+router.post("/session/delete/:sessionId", authController.deleteSession);
+router.post("/send-verification-code", authController.sendVerificationCode);
+router.post("/verify-email", authController.verifyEmailCode);
 
 // URL Shortener routes
 router

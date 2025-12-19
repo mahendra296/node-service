@@ -8,6 +8,12 @@ import {
   MILISECONDS_PER_SECONDS,
   REFRESH_TOKEN_EXPIRY,
 } from "../config/constant.js";
+import {
+  addSession,
+  removeSession,
+  removeSessions,
+  isSessionActive,
+} from "./session-cache.js";
 
 export const getUserByEmail = async (email) => {
   const [user] = await db
@@ -62,11 +68,7 @@ export const generateRefreshToken = async ({ refreshTokenId }) => {
 };
 
 export const createSession = async (userId, { ip, userAgent }) => {
-  // Delete existing refresh tokens for this user (ensures only one token per user)
-  await db
-    .delete(refreshTokensTable)
-    .where(eq(refreshTokensTable.userId, userId));
-
+  // Allow multiple sessions for multi-device support
   const [session] = await db
     .insert(refreshTokensTable)
     .values({
@@ -76,7 +78,26 @@ export const createSession = async (userId, { ip, userAgent }) => {
       valid: true,
     })
     .$returningId();
+
+  // Add to in-memory cache
+  addSession(session.id);
+
   return session;
+};
+
+export const getSessionsByUserId = async (userId) => {
+  const sessions = await db
+    .select()
+    .from(refreshTokensTable)
+    .where(
+      and(
+        eq(refreshTokensTable.userId, userId),
+        eq(refreshTokensTable.valid, true)
+      )
+    )
+    .orderBy(refreshTokensTable.createdAt);
+
+  return sessions;
 };
 
 export const verifyJwtToken = async (token) => {
@@ -151,13 +172,42 @@ export const findSessionById = async (refreshTokenId) => {
 };
 
 export const deleteRefreshTokenByUserId = async (userId) => {
+  // Get all session IDs for this user first
+  const sessions = await db
+    .select({ id: refreshTokensTable.id })
+    .from(refreshTokensTable)
+    .where(eq(refreshTokensTable.userId, userId));
+
+  // Remove from cache
+  const sessionIds = sessions.map((s) => s.id);
+  removeSessions(sessionIds);
+
+  // Delete from database
   await db
     .delete(refreshTokensTable)
     .where(eq(refreshTokensTable.userId, userId));
 };
 
 export const deleteRefreshTokenById = async (refreshTokenId) => {
+  // Remove from cache
+  removeSession(refreshTokenId);
+
+  // Delete from database
   await db
     .delete(refreshTokensTable)
     .where(eq(refreshTokensTable.id, refreshTokenId));
+};
+
+// Check if session is active (uses in-memory cache)
+export { isSessionActive };
+
+// Load all active sessions from DB into cache on server startup
+export const loadSessionsIntoCache = async () => {
+  const sessions = await db
+    .select({ id: refreshTokensTable.id })
+    .from(refreshTokensTable)
+    .where(eq(refreshTokensTable.valid, true));
+
+  sessions.forEach((session) => addSession(session.id));
+  console.log(`Loaded ${sessions.length} active sessions into cache`);
 };
