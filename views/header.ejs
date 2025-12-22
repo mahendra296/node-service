@@ -61,9 +61,14 @@
     <div class="header-actions">
       <% if (user) { %>
       <div class="profile-dropdown">
+        <% if (user.profileImage) { %>
+        <button class="profile-avatar profile-avatar-with-image" aria-label="User menu" onclick="toggleProfileMenu()" style="background-image: url('<%= user.profileImage %>'); background-size: cover; background-position: center;">
+        </button>
+        <% } else { %>
         <button class="profile-avatar" aria-label="User menu" onclick="toggleProfileMenu()">
           <%= user.name ? user.name.charAt(0).toUpperCase() : 'U' %>
         </button>
+        <% } %>
         <div class="profile-menu" id="profileMenu">
           <div class="profile-menu-header">
             <span class="profile-menu-name"><%= user.name %></span>

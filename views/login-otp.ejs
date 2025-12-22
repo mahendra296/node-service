@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login with OTP - AlisterBank</title>
+    <link rel="stylesheet" href="/style.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <%- include('header') %>
+
+    <main
+      style="
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        background: var(--bg-secondary);
+      "
+    >
+      <div class="auth-container">
+        <section class="form-section active" id="otpLoginForm">
+          <h2>Login with OTP</h2>
+          <p>Enter your phone number to receive a one-time password</p>
+
+          <% if (success && success.length > 0) { %>
+          <div class="alert alert-success"><%= success[0] %></div>
+          <% } %> <% if (error && error.length > 0) { %>
+          <div class="alert alert-error"><%= error[0] %></div>
+          <% } %>
+
+          <div id="phone-section">
+            <div class="input-group">
+              <label for="phone">Phone Number</label>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                placeholder="1234567890"
+                required
+              />
+            </div>
+
+            <button
+              type="button"
+              class="btn"
+              id="send-otp-btn"
+              onclick="sendOtp()"
+            >
+              Send OTP
+            </button>
+          </div>
+
+          <div id="otp-section" style="display: none">
+            <div class="input-group">
+              <label for="otp">Enter OTP</label>
+              <input
+                type="text"
+                id="otp"
+                name="otp"
+                placeholder="000000"
+                maxlength="6"
+                pattern="[0-9]*"
+                inputmode="numeric"
+                required
+                style="
+                  letter-spacing: 0.5rem;
+                  text-align: center;
+                  font-size: 1.25rem;
+                  font-weight: 600;
+                "
+              />
+            </div>
+
+            <button
+              type="button"
+              class="btn"
+              id="verify-otp-btn"
+              onclick="verifyOtp()"
+            >
+              Verify & Login
+            </button>
+
+            <div style="margin-top: 1rem; text-align: center">
+              <button type="button" class="btn-link" onclick="sendOtp()">
+                Resend OTP
+              </button>
+              <span style="color: var(--text-secondary); margin: 0 0.5rem"
+                >|</span
+              >
+              <button type="button" class="btn-link" onclick="changePhone()">
+                Change Phone
+              </button>
+            </div>
+          </div>
+
+          <p id="otp-message" class="verification-message"></p>
+
+          <div class="switch-text">
+            <a href="/login">Login with Password</a>
+          </div>
+        </section>
+
+        <aside class="side-panel">
+          <svg
+            width="80"
+            height="80"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="white"
+            stroke-width="2"
+            style="margin-bottom: 2rem"
+          >
+            <path
+              d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"
+            ></path>
+          </svg>
+          <h3>Quick & Secure</h3>
+          <p>
+            Login instantly with a one-time password sent to your registered
+            phone number. No password required.
+          </p>
+          <a href="/register" class="switch-btn">Create Account</a>
+        </aside>
+      </div>
+    </main>
+
+    <%- include('footer') %>
+
+    <script>
+      let currentPhone = "";
+
+      async function sendOtp() {
+        const phoneInput = document.getElementById("phone");
+        const phone = phoneInput.value.trim();
+        const sendBtn = document.getElementById("send-otp-btn");
+        const message = document.getElementById("otp-message");
+
+        if (!phone) {
+          message.textContent = "Please enter your phone number";
+          message.className = "verification-message error";
+          return;
+        }
+
+        if (sendBtn) {
+          sendBtn.disabled = true;
+          sendBtn.textContent = "Sending...";
+        }
+        message.textContent = "";
+        message.className = "verification-message";
+
+        try {
+          const response = await fetch("/send-login-otp", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ phone }),
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            currentPhone = phone;
+            document.getElementById("phone-section").style.display = "none";
+            document.getElementById("otp-section").style.display = "block";
+            message.textContent = "OTP sent to your phone number!";
+            message.className = "verification-message success";
+            document.getElementById("otp").focus();
+          } else {
+            message.textContent = data.message || "Failed to send OTP";
+            message.className = "verification-message error";
+            if (sendBtn) {
+              sendBtn.disabled = false;
+              sendBtn.textContent = "Send OTP";
+            }
+          }
+        } catch (error) {
+          message.textContent = "An error occurred. Please try again.";
+          message.className = "verification-message error";
+          if (sendBtn) {
+            sendBtn.disabled = false;
+            sendBtn.textContent = "Send OTP";
+          }
+        }
+      }
+
+      async function verifyOtp() {
+        const otp = document.getElementById("otp").value.trim();
+        const verifyBtn = document.getElementById("verify-otp-btn");
+        const message = document.getElementById("otp-message");
+
+        if (!otp || otp.length !== 6) {
+          message.textContent = "Please enter a valid 6-digit OTP";
+          message.className = "verification-message error";
+          return;
+        }
+
+        verifyBtn.disabled = true;
+        verifyBtn.textContent = "Verifying...";
+        message.textContent = "";
+
+        try {
+          const response = await fetch("/verify-login-otp", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ phone: currentPhone, otp }),
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            message.textContent = "Login successful! Redirecting...";
+            message.className = "verification-message success";
+            setTimeout(() => {
+              window.location.href = data.redirectUrl || "/";
+            }, 1000);
+          } else {
+            message.textContent = data.message || "Invalid OTP";
+            message.className = "verification-message error";
+            verifyBtn.disabled = false;
+            verifyBtn.textContent = "Verify & Login";
+          }
+        } catch (error) {
+          message.textContent = "An error occurred. Please try again.";
+          message.className = "verification-message error";
+          verifyBtn.disabled = false;
+          verifyBtn.textContent = "Verify & Login";
+        }
+      }
+
+      function changePhone() {
+        document.getElementById("phone-section").style.display = "block";
+        document.getElementById("otp-section").style.display = "none";
+        document.getElementById("otp").value = "";
+        document.getElementById("otp-message").textContent = "";
+        document.getElementById("send-otp-btn").disabled = false;
+        document.getElementById("send-otp-btn").textContent = "Send OTP";
+        document.getElementById("phone").focus();
+      }
+
+      // Only allow numbers in OTP input
+      document.getElementById("otp")?.addEventListener("input", function (e) {
+        this.value = this.value.replace(/[^0-9]/g, "");
+      });
+    </script>
+  </body>
+</html>

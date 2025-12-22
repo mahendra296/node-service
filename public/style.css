@@ -1686,6 +1686,13 @@ main {
   box-shadow: var(--shadow-sm);
 }
 
+.profile-avatar-wrapper {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
+}
+
 .profile-avatar-large {
   width: 80px;
   height: 80px;
@@ -1698,6 +1705,45 @@ main {
   align-items: center;
   justify-content: center;
   box-shadow: var(--shadow-md);
+}
+
+.profile-avatar-image {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: var(--shadow-md);
+}
+
+.profile-avatar-overlay {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 32px;
+  height: 32px;
+  background: var(--primary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 3px solid var(--bg-primary);
+  transition: var(--transition);
+  color: white;
+}
+
+.profile-avatar-overlay:hover {
+  background: var(--primary-dark);
+  transform: scale(1.1);
+}
+
+.profile-avatar-overlay svg {
+  width: 16px;
+  height: 16px;
+}
+
+.profile-avatar-with-image {
+  background: none;
 }
 
 .profile-info h1 {
@@ -2102,5 +2148,292 @@ main {
 
   .verification-input-group .btn-primary {
     width: 100%;
+  }
+}
+
+/* ==========================================
+   Phone Input Group Styles
+   ========================================== */
+.phone-input-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.country-code-select {
+  width: 120px;
+  padding: 1rem;
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  font-size: 1rem;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.country-code-select:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.phone-input-group input {
+  flex: 1;
+}
+
+@media (max-width: 480px) {
+  .phone-input-group {
+    flex-direction: column;
+  }
+
+  .country-code-select {
+    width: 100%;
+  }
+}
+
+/* ==========================================
+   Change Password Section
+   ========================================== */
+.change-password-section {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.change-password-section .input-group {
+  margin-bottom: 1rem;
+}
+
+.change-password-section .input-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.change-password-section .input-group input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  transition: var(--transition);
+}
+
+.change-password-section .input-group input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+/* ==========================================
+   Name Row (First/Last Name Side by Side)
+   ========================================== */
+.name-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.name-row .input-group {
+  flex: 1;
+}
+
+@media (max-width: 480px) {
+  .name-row {
+    flex-direction: column;
+    gap: 0;
+  }
+}
+
+/* ==========================================
+   Radio Button Group Styles
+   ========================================== */
+.radio-group {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.radio-label input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.radio-label span {
+  user-select: none;
+}
+
+@media (max-width: 480px) {
+  .radio-group {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+}
+
+/* ==========================================
+   Edit Profile Section
+   ========================================== */
+.edit-profile-section {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.edit-profile-section .input-group {
+  margin-bottom: 1rem;
+}
+
+.edit-profile-section .input-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.edit-profile-section .input-group input[type="text"] {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  transition: var(--transition);
+}
+
+.edit-profile-section .input-group input[type="text"]:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.edit-profile-section .name-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.edit-profile-section .name-row .input-group {
+  flex: 1;
+}
+
+@media (max-width: 480px) {
+  .edit-profile-section .name-row {
+    flex-direction: column;
+    gap: 0;
+  }
+}
+
+/* ==========================================
+   Change Password Page Styles
+   ========================================== */
+.back-link {
+  margin-bottom: 1.5rem;
+}
+
+.back-link a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  padding: 0.5rem 0;
+  transition: var(--transition);
+}
+
+.back-link a:hover {
+  color: var(--primary);
+}
+
+.back-link a svg {
+  transition: var(--transition);
+}
+
+.back-link a:hover svg {
+  transform: translateX(-4px);
+}
+
+.profile-card-centered {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.card-header-icon {
+  width: 80px;
+  height: 80px;
+  background: rgba(26, 86, 219, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+  color: var(--primary);
+}
+
+.profile-card-centered h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--secondary);
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.card-description {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-wrapper input {
+  width: 100%;
+  padding-right: 3rem;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  color: var(--text-light);
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.password-toggle:hover {
+  color: var(--primary);
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.form-actions .btn-primary,
+.form-actions .btn-outline {
+  flex: 1;
+  text-align: center;
+}
+
+@media (max-width: 480px) {
+  .form-actions {
+    flex-direction: column;
   }
 }

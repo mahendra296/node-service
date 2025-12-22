@@ -1,11 +1,15 @@
 import { db } from "../config/db.js";
 import { usersTable, verificationCodesTable } from "../drizzle/schema.js";
-import { eq, and, gt } from "drizzle-orm";
+import { eq, and, gt, desc, sql } from "drizzle-orm";
 import {
   VERIFICATION_CODE_EXPIRY,
   VERIFICATION_CODE_LENGTH,
 } from "../config/constant.js";
-import { sendVerificationEmail } from "./email-service.js";
+import {
+  sendVerificationEmail,
+  sendResetPasswordEmail,
+} from "./email-service.js";
+import { sendOtpSms } from "./sms-service.js";
 
 export const generateVerificationCode = () => {
   const min = Math.pow(10, VERIFICATION_CODE_LENGTH - 1);
@@ -13,53 +17,89 @@ export const generateVerificationCode = () => {
   return String(Math.floor(Math.random() * (max - min + 1)) + min);
 };
 
-export const createVerificationCode = async (userId, email, sendType = "EMAIL") => {
-  // Delete any existing codes for this user
-  await db
-    .delete(verificationCodesTable)
-    .where(eq(verificationCodesTable.userId, userId));
-
+export const createVerificationCode = async (
+  userId,
+  contact,
+  sendType = "EMAIL"
+) => {
   const code = generateVerificationCode();
-  const expiresAt = new Date(Date.now() + VERIFICATION_CODE_EXPIRY);
+  const expiryMinutes = VERIFICATION_CODE_EXPIRY / 1000 / 60;
 
   await db.insert(verificationCodesTable).values({
     userId,
     code,
-    expiresAt,
+    expiresAt: sql`DATE_ADD(NOW(), INTERVAL ${expiryMinutes} MINUTE)`,
     sendType,
   });
 
-  // Send email with verification code
+  // Send verification code via appropriate channel
   if (sendType === "EMAIL") {
-    await sendVerificationEmail(email, code);
+    await sendVerificationEmail(contact, code);
+  } else if (sendType === "SMS") {
+    await sendOtpSms(contact, code);
   }
 
   return { success: true };
 };
 
 export const verifyCode = async (userId, code) => {
-  const [verificationRecord] = await db
+  // Fetch the latest non-expired verification code for the user
+  const [latestCode] = await db
     .select()
     .from(verificationCodesTable)
     .where(
       and(
         eq(verificationCodesTable.userId, userId),
-        eq(verificationCodesTable.code, code),
-        gt(verificationCodesTable.expiresAt, new Date())
+        gt(verificationCodesTable.expiresAt, sql`NOW()`)
       )
-    );
+    )
+    .orderBy(desc(verificationCodesTable.createdAt))
+    .limit(1);
 
-  if (!verificationRecord) {
-    return { success: false, message: "Invalid or expired verification code" };
+  if (!latestCode) {
+    return {
+      success: false,
+      message: "No verification code found or code has expired",
+    };
+  }
+
+  // Check if the code matches
+  if (latestCode.code !== code) {
+    return { success: false, message: "Invalid verification code" };
   }
 
   // Mark email as verified
   await markEmailAsVerified(userId);
 
-  // Delete the used verification code
-  await db
-    .delete(verificationCodesTable)
-    .where(eq(verificationCodesTable.id, verificationRecord.id));
+  return { success: true };
+};
+
+export const verifyOtpForLogin = async (userId, code) => {
+  // Fetch the latest non-expired SMS verification code for the user
+  const [latestCode] = await db
+    .select()
+    .from(verificationCodesTable)
+    .where(
+      and(
+        eq(verificationCodesTable.userId, userId),
+        eq(verificationCodesTable.sendType, "SMS"),
+        gt(verificationCodesTable.expiresAt, sql`NOW()`)
+      )
+    )
+    .orderBy(desc(verificationCodesTable.createdAt))
+    .limit(1);
+
+  if (!latestCode) {
+    return { success: false, message: "No OTP found or OTP has expired" };
+  }
+
+  // Check if the code matches
+  if (latestCode.code !== code) {
+    return { success: false, message: "Invalid OTP" };
+  }
+
+  // Mark phone as verified
+  await markPhoneAsVerified(userId);
 
   return { success: true };
 };
@@ -71,8 +111,56 @@ export const markEmailAsVerified = async (userId) => {
     .where(eq(usersTable.id, userId));
 };
 
+export const markPhoneAsVerified = async (userId) => {
+  await db
+    .update(usersTable)
+    .set({ isPhoneVerified: true })
+    .where(eq(usersTable.id, userId));
+};
+
 export const deleteExpiredCodes = async () => {
   await db
     .delete(verificationCodesTable)
-    .where(gt(new Date(), verificationCodesTable.expiresAt));
+    .where(gt(sql`NOW()`, verificationCodesTable.expiresAt));
+};
+
+export const createResetPasswordCode = async (userId, email) => {
+  const code = generateVerificationCode();
+  const expiryMinutes = VERIFICATION_CODE_EXPIRY / 1000 / 60;
+
+  await db.insert(verificationCodesTable).values({
+    userId,
+    code,
+    expiresAt: sql`DATE_ADD(NOW(), INTERVAL ${expiryMinutes} MINUTE)`,
+    sendType: "EMAIL",
+  });
+
+  await sendResetPasswordEmail(email, code);
+
+  return { success: true };
+};
+
+export const verifyResetPasswordCode = async (userId, code) => {
+  const [latestCode] = await db
+    .select()
+    .from(verificationCodesTable)
+    .where(
+      and(
+        eq(verificationCodesTable.userId, userId),
+        eq(verificationCodesTable.sendType, "EMAIL"),
+        gt(verificationCodesTable.expiresAt, sql`NOW()`)
+      )
+    )
+    .orderBy(desc(verificationCodesTable.createdAt))
+    .limit(1);
+
+  if (!latestCode) {
+    return { success: false, message: "Reset link has expired or is invalid" };
+  }
+
+  if (latestCode.code !== code) {
+    return { success: false, message: "Invalid reset link" };
+  }
+
+  return { success: true };
 };

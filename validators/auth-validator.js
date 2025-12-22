@@ -1,11 +1,24 @@
 import { z } from "zod";
 
 export const registrationSchema = z.object({
-  name: z
-    .string({ required_error: "Name is required" })
-    .min(2, "Name must be at least 2 characters")
-    .max(100, "Name must be less than 100 characters")
+  firstName: z
+    .string({ required_error: "First name is required" })
+    .min(2, "First name must be at least 2 characters")
+    .max(50, "First name must be less than 50 characters")
     .trim(),
+
+  lastName: z
+    .string({ required_error: "Last name is required" })
+    .min(2, "Last name must be at least 2 characters")
+    .max(50, "Last name must be less than 50 characters")
+    .trim(),
+
+  gender: z
+    .string({ required_error: "Gender is required" })
+    .refine(
+      (val) => ["male", "female", "other"].includes(val),
+      "Please select a valid gender"
+    ),
 
   email: z
     .string({ required_error: "Email is required" })

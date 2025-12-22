@@ -8,7 +8,19 @@ import {
   isSessionActive,
 } from "../service/auth-service.js";
 
-const publicRoutes = ["/login", "/register", "/", "/refresh-token"];
+const publicRoutes = [
+  "/login",
+  "/login-otp",
+  "/register",
+  "/",
+  "/refresh-token",
+  "/send-login-otp",
+  "/verify-login-otp",
+  "/contact",
+  "/about",
+  "/forgot-password",
+  "/reset-password",
+];
 
 /* export const verifyAuthToken = async (req, res, next) => {
   const token = req.cookies?.access_token;
@@ -59,11 +71,14 @@ export const verifyAuthToken = async (req, res, next) => {
 
   if (!accessToken && !refreshToken) {
     req.user = null;
-    // For protected routes, redirect to login directly
-    if (!publicRoutes.includes(req.path)) {
-      return res.redirect("/login");
+    // Allow public routes to proceed
+    if (isPublicRoute(req.path)) {
+      return next();
     }
-    return next();
+
+    // Redirect to login for protected routes
+    req.flash("error", "Please login to continue.");
+    return res.redirect("/login");
   }
 
   if (accessToken) {
@@ -76,14 +91,14 @@ export const verifyAuthToken = async (req, res, next) => {
         if (!isSessionActive(decodedToken.refreshTokenId)) {
           // Session was invalidated (user logged out from all devices)
           req.user = null;
-          res.clearCookie("access_token");
-          res.clearCookie("refresh_token");
+          clearAuthCookies(res);
 
-          if (!publicRoutes.includes(req.path)) {
-            req.flash("error", "Session expired. Please login again.");
-            return res.redirect("/login");
+          if (isPublicRoute(req.path)) {
+            return next();
           }
-          return next();
+
+          req.flash("error", "Session expired. Please login again!");
+          return res.redirect("/login");
         }
       }
 
@@ -91,6 +106,7 @@ export const verifyAuthToken = async (req, res, next) => {
       return next();
     } catch (error) {
       // Access token is invalid/expired, try refresh token below
+      console.error("Access Token error : ", error);
       res.clearCookie("access_token");
     }
   }
@@ -102,31 +118,89 @@ export const verifyAuthToken = async (req, res, next) => {
       );
       req.user = user;
 
-      const baseConfig = { httpOnly: true, secure: true };
-
-      res.cookie("access_token", newAccessToken, {
-        ...baseConfig,
-        maxAge: ACCESS_TOKEN_EXPIRY,
-      });
-
-      res.cookie("refresh_token", newRefreshToken, {
-        ...baseConfig,
-        maxAge: REFRESH_TOKEN_EXPIRY,
-      });
+      setAuthCookies(res, newAccessToken, newRefreshToken);
 
       return next();
     } catch (error) {
-      console.error(error);
+      console.error("Refresh Token error : ", error);
       req.user = null;
-      res.clearCookie("access_token");
-      res.clearCookie("refresh_token");
+      clearAuthCookies(res);
 
-      if (!publicRoutes.includes(req.path)) {
-        req.flash("error", "Session expired. Please login again.");
-        return res.redirect("/login");
+      if (isPublicRoute(req.path)) {
+        return next();
       }
+
+      req.flash("error", "Session expired. Please login again.");
+      return res.redirect("/login");
     }
   }
 
   return next();
+};
+
+const isPublicRoute = (path) => {
+  return publicRoutes.some((route) => {
+    // Exact match
+    if (route === path) return true;
+
+    // Pattern match for dynamic routes (e.g., /api/*)
+    if (route.endsWith("/*")) {
+      const baseRoute = route.slice(0, -2);
+      return path.startsWith(baseRoute);
+    }
+
+    return false;
+  });
+};
+
+// Use this middleware for routes that absolutely require authentication
+export const requireAuth = (req, res, next) => {
+  if (!req.user) {
+    req.flash("error", "Authentication required.");
+    return res.redirect("/login");
+  }
+  next();
+};
+
+// Middleware to require specific roles
+export const requireRole = (...roles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      req.flash("error", "Authentication required.");
+      return res.redirect("/login");
+    }
+
+    if (!roles.includes(req.user.role)) {
+      req.flash("error", "You don't have permission to access this resource.");
+      return res.redirect("/");
+    }
+
+    next();
+  };
+};
+
+// ==================== Helper Functions ====================
+
+const setAuthCookies = (res, accessToken, refreshToken) => {
+  const baseConfig = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    secure: true,
+  };
+
+  res.cookie("access_token", accessToken, {
+    ...baseConfig,
+    maxAge: ACCESS_TOKEN_EXPIRY,
+  });
+
+  res.cookie("refresh_token", refreshToken, {
+    ...baseConfig,
+    maxAge: REFRESH_TOKEN_EXPIRY,
+  });
+};
+
+const clearAuthCookies = (res) => {
+  res.clearCookie("access_token");
+  res.clearCookie("refresh_token");
 };

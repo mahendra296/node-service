@@ -5,6 +5,7 @@ import {
 import {
   createUser,
   getUserByEmail,
+  getUserByPhone,
   getUserById,
   hashPassword,
   verifyPassword,
@@ -21,10 +22,9 @@ import {
   validateLogin,
   validateRegistration,
 } from "../validators/auth-validator.js";
-import { validateVerificationCode } from "../validators/verification-validator.js";
 import {
   createVerificationCode,
-  verifyCode,
+  verifyOtpForLogin,
 } from "../service/verification-service.js";
 
 export const getDashboardPage = async (req, res) => {
@@ -94,7 +94,7 @@ export const submitLogin = async (req, res) => {
 
   const jwtToken = await generateJwtToken({
     id: user.id,
-    name: user.name,
+    name: `${user.firstName} ${user.lastName}`,
     email: user.email,
     refreshTokenId: session.id,
   });
@@ -127,7 +127,7 @@ export const getRegisterPage = async (req, res) => {
 };
 
 export const submitRegistration = async (req, res) => {
-  const { name, email, password, phone } = req.body;
+  const { firstName, lastName, gender, email, password, countryCode, phone } = req.body;
 
   // Validate input
   const validation = validateRegistration(req.body);
@@ -140,7 +140,7 @@ export const submitRegistration = async (req, res) => {
     return res.render("register", {
       error: [errorMessage],
       success: [],
-      formData: { name, email, phone },
+      formData: { firstName, lastName, gender, email, countryCode, phone },
     });
   }
 
@@ -151,12 +151,20 @@ export const submitRegistration = async (req, res) => {
       return res.render("register", {
         error: ["User already exists with this email"],
         success: [],
-        formData: { name, email, phone },
+        formData: { firstName, lastName, gender, email, countryCode, phone },
       });
     }
 
     const hashedPassword = await hashPassword(password);
-    await createUser({ name, email, password: hashedPassword });
+    await createUser({
+      firstName,
+      lastName,
+      gender,
+      email,
+      countryCode,
+      phone,
+      password: hashedPassword,
+    });
 
     req.flash("success", "Registration successful! Please login.");
     return res.redirect("/login");
@@ -165,7 +173,7 @@ export const submitRegistration = async (req, res) => {
     return res.render("register", {
       error: ["Something went wrong. Please try again."],
       success: [],
-      formData: { name, email, phone },
+      formData: { firstName, lastName, gender, email, countryCode, phone },
     });
   }
 };
@@ -244,33 +252,6 @@ export const logoutAllDevices = async (req, res) => {
   return res.redirect("/login");
 };
 
-export const getProfilePage = async (req, res) => {
-  try {
-    if (!req.user) {
-      return res.redirect("/login");
-    }
-
-    // Fetch full user data including createdAt
-    const fullUser = await getUserById(req.user.id);
-    if (!fullUser) {
-      return res.redirect("/login");
-    }
-
-    // Fetch all active sessions for the user
-    const sessions = await getSessionsByUserId(req.user.id);
-    const currentSessionId = req.user.refreshTokenId;
-
-    return res.render("profile", {
-      profileUser: fullUser,
-      sessions,
-      currentSessionId,
-    });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).send("Internal server error.");
-  }
-};
-
 export const deleteSession = async (req, res) => {
   try {
     const { sessionId } = req.params;
@@ -307,73 +288,72 @@ export const deleteSession = async (req, res) => {
   }
 };
 
-export const sendVerificationCode = async (req, res) => {
+export const getOtpLoginPage = async (req, res) => {
   try {
-    const userId = req.user?.id;
+    return res.render("login-otp", {
+      error: req.flash("error"),
+      success: req.flash("success"),
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send("Internal server error.");
+  }
+};
 
-    if (!userId) {
-      return res.status(401).json({
+export const sendLoginOtp = async (req, res) => {
+  try {
+    const { phone } = req.body;
+
+    if (!phone) {
+      return res.status(400).json({
         success: false,
-        message: "Not authenticated",
+        message: "Phone number is required",
       });
     }
 
-    const user = await getUserById(userId);
+    const user = await getUserByPhone(phone);
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "User not found",
+        message: "No account found with this phone number",
       });
     }
 
-    if (user.isEmailVerified) {
-      return res.status(400).json({
-        success: false,
-        message: "Email is already verified",
-      });
-    }
-
-    await createVerificationCode(userId, user.email, "EMAIL");
+    await createVerificationCode(user.id, user.countryCode + phone, "SMS");
 
     return res.status(200).json({
       success: true,
-      message: "Verification code sent to your email",
+      message: "OTP sent to your phone number",
     });
   } catch (error) {
     console.error(error);
     return res.status(500).json({
       success: false,
-      message: "Failed to send verification code",
+      message: "Failed to send OTP",
     });
   }
 };
 
-export const verifyEmailCode = async (req, res) => {
+export const verifyLoginOtp = async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const { phone, otp } = req.body;
 
-    if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: "Not authenticated",
-      });
-    }
-
-    const validation = validateVerificationCode(req.body);
-    if (!validation.success) {
-      const errorMessage =
-        validation.error.errors?.[0]?.message ||
-        validation.error.issues?.[0]?.message ||
-        "Invalid verification code";
+    if (!phone || !otp) {
       return res.status(400).json({
         success: false,
-        message: errorMessage,
+        message: "Phone number and OTP are required",
       });
     }
 
-    const { code } = req.body;
-    const result = await verifyCode(userId, code);
+    const user = await getUserByPhone(phone);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "No account found with this phone number",
+      });
+    }
 
+    const result = await verifyOtpForLogin(user.id, otp);
     if (!result.success) {
       return res.status(400).json({
         success: false,
@@ -381,15 +361,45 @@ export const verifyEmailCode = async (req, res) => {
       });
     }
 
+    // Create session and generate tokens
+    const session = await createSession(user.id, {
+      ip: req.clientIp,
+      userAgent: req.headers["user-agent"],
+    });
+
+    const jwtToken = await generateJwtToken({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      refreshTokenId: session.id,
+    });
+
+    const refreshTokenValue = await generateRefreshToken({
+      refreshTokenId: session.id,
+    });
+
+    const baseConfig = { httpOnly: true, secure: true };
+
+    res.cookie("access_token", jwtToken, {
+      ...baseConfig,
+      maxAge: ACCESS_TOKEN_EXPIRY,
+    });
+
+    res.cookie("refresh_token", refreshTokenValue, {
+      ...baseConfig,
+      maxAge: REFRESH_TOKEN_EXPIRY,
+    });
+
     return res.status(200).json({
       success: true,
-      message: "Email verified successfully",
+      message: "Login successful",
+      redirectUrl: "/",
     });
   } catch (error) {
     console.error(error);
     return res.status(500).json({
       success: false,
-      message: "Failed to verify email",
+      message: "Failed to verify OTP",
     });
   }
 };

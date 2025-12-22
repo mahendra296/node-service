@@ -6,7 +6,7 @@ import requestIp from "request-ip";
 
 import { shortenRouter } from "./routes/page.routes.js";
 import { verifyAuthToken } from "./middlewares/verify-auth-middleware.js";
-import { loadSessionsIntoCache } from "./service/auth-service.js";
+import { loadSessionsIntoCache, getUserById } from "./service/auth-service.js";
 
 const app = express();
 
@@ -29,13 +29,23 @@ app.use(requestIp.mw());
 
 // Serve static files before auth check (CSS, JS, images don't need authentication)
 app.use(express.static("public"));
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // verify auth token for each request
 app.use(verifyAuthToken);
 
-app.use((req, res, next) => {
-  res.locals.user = req.user;
+app.use(async (req, res, next) => {
+  if (req.user?.id) {
+    // Fetch profile image for authenticated users
+    const fullUser = await getUserById(req.user.id);
+    res.locals.user = {
+      ...req.user,
+      profileImage: fullUser?.profileImage || null,
+    };
+  } else {
+    res.locals.user = req.user;
+  }
   return next();
 });
 app.set("view engine", "ejs");

@@ -22,10 +22,16 @@ export const shortLinkTable = mysqlTable("short_links", {
 
 export const usersTable = mysqlTable("users", {
   id: bigint({ mode: "number" }).autoincrement().primaryKey(),
-  name: varchar({ length: 255 }).notNull(),
+  firstName: varchar("first_name", { length: 255 }).notNull(),
+  lastName: varchar("last_name", { length: 255 }).notNull(),
+  gender: varchar({ length: 10 }).notNull(),
   email: varchar({ length: 255 }).notNull().unique(),
+  countryCode: varchar("country_code", { length: 6 }),
+  phone: varchar({ length: 20 }).unique(),
   password: varchar({ length: 255 }).notNull(),
+  profileImage: varchar("profile_image", { length: 255 }),
   isEmailVerified: boolean("is_email_verified").default(false).notNull(),
+  isPhoneVerified: boolean("is_phone_verified").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
@@ -53,10 +59,30 @@ export const verificationCodesTable = mysqlTable("verification_codes", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const passwordHistoryTable = mysqlTable("password_history", {
+  id: bigint({ mode: "number" }).autoincrement().primaryKey(),
+  userId: bigint("user_id", { mode: "number" })
+    .notNull()
+    .references(() => usersTable.id, { onDelete: "cascade" }),
+  password: varchar({ length: 255 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const userRelation = relations(usersTable, ({ many }) => ({
   shortLinks: many(shortLinkTable),
   refreshTokens: many(refreshTokensTable),
+  passwordHistory: many(passwordHistoryTable),
 }));
+
+export const passwordHistoryRelation = relations(
+  passwordHistoryTable,
+  ({ one }) => ({
+    user: one(usersTable, {
+      fields: [passwordHistoryTable.userId],
+      references: [usersTable.id],
+    }),
+  })
+);
 
 export const refreshTokenRelation = relations(
   refreshTokensTable,

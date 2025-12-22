@@ -24,6 +24,15 @@ export const getUserByEmail = async (email) => {
   return user;
 };
 
+export const getUserByPhone = async (phone) => {
+  const [user] = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.phone, phone));
+
+  return user;
+};
+
 export const getUserById = async (userId) => {
   const [user] = await db
     .select()
@@ -33,13 +42,25 @@ export const getUserById = async (userId) => {
   return user;
 };
 
-export const createUser = async ({ name, email, password }) => {
+export const createUser = async ({
+  firstName,
+  lastName,
+  gender,
+  email,
+  countryCode,
+  phone,
+  password,
+}) => {
   const result = await db
     .insert(usersTable)
     .values({
-      name: name,
-      email: email,
-      password: password,
+      firstName,
+      lastName,
+      gender,
+      email,
+      countryCode: countryCode || null,
+      phone: phone || null,
+      password,
     })
     .$returningId();
 
@@ -136,7 +157,7 @@ export const refreshJwtToken = async (refreshToken) => {
 
     const userInfo = {
       id: user.id,
-      name: user.name,
+      name: `${user.firstName} ${user.lastName}`,
       email: user.email,
       refreshTokenId: currentSession.id,
     };
@@ -211,3 +232,4 @@ export const loadSessionsIntoCache = async () => {
   sessions.forEach((session) => addSession(session.id));
   console.log(`Loaded ${sessions.length} active sessions into cache`);
 };
+
