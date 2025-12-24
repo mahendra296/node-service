@@ -34,7 +34,7 @@ export const registrationSchema = z.object({
 
   password: z
     .string({ required_error: "Password is required" })
-    .min(3, "Password must be at least 8 characters")
+    .min(3, "Password must be at least 3 characters")
     .max(100, "Password must be less than 100 characters"),
 
   // .regex(/[A-Z]/, "Password must contain at least one uppercase letter")

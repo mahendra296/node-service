@@ -8,7 +8,12 @@ A full-stack Node.js web application featuring URL shortening functionality with
 - **Token Refresh**: Database-managed refresh tokens with revocation support
 - **Multi-Device Logout**: Ability to logout from all devices at once
 - **URL Shortener**: Create, edit, and delete shortened URLs
+- **User Profile**: Profile management with image upload
+- **Password Management**: Change password with validation and password history
+- **Email Verification**: Code-based and link-based email verification
+- **Password Reset**: Forgot password with email reset link
 - **Password Security**: Argon2 password hashing (winner of the Password Hashing Competition)
+- **File Upload**: Profile image upload with Multer
 - **Input Validation**: Schema-based validation using Zod
 - **Flash Messages**: User feedback for actions and errors
 - **Responsive UI**: EJS templating with server-side rendering
@@ -25,6 +30,7 @@ A full-stack Node.js web application featuring URL shortening functionality with
 | Authentication | JWT (jsonwebtoken) |
 | Password Hashing | Argon2 |
 | Validation | Zod |
+| File Upload | Multer |
 | Session Management | express-session |
 
 ## Project Structure
@@ -35,20 +41,27 @@ node-service/
 ├── package.json
 ├── .env                     # Environment variables
 ├── config/
-│   └── db.js               # Database connection configuration
+│   ├── db.js               # Database connection configuration
+│   └── constant.js         # Application constants
 ├── controller/
 │   ├── authController.js   # Authentication handlers
+│   ├── profileController.js # Profile & password handlers
 │   └── shortnerControllerMySQL.js  # URL shortener handlers
 ├── service/
-│   └── auth-service.js     # Authentication business logic
+│   ├── auth-service.js     # Authentication business logic
+│   ├── profile-service.js  # Profile business logic
+│   └── verification-service.js # Email verification logic
 ├── model/
 │   └── shortner-model.js   # Database queries for URL shortener
 ├── routes/
 │   └── page.routes.js      # Route definitions
 ├── middlewares/
-│   └── verify-auth-middleware.js  # JWT verification middleware
+│   ├── verify-auth-middleware.js  # JWT verification middleware
+│   └── upload-middleware.js       # Multer file upload config
 ├── validators/
-│   └── auth-validator.js   # Zod validation schemas
+│   ├── auth-validator.js         # Auth validation schemas
+│   ├── password-validator.js     # Password validation schemas
+│   └── verification-validator.js # Verification code schemas
 ├── drizzle/
 │   ├── schema.js           # Database schema definitions
 │   └── migrations/         # Database migrations
@@ -58,8 +71,16 @@ node-service/
 │   ├── register.ejs
 │   ├── shortner.ejs
 │   ├── edit.ejs
-│   └── 404.ejs
-└── public/                 # Static assets (CSS, JS, images)
+│   ├── 404.ejs
+│   └── profile/            # Profile-related views
+│       ├── profile.ejs
+│       ├── change-password.ejs
+│       ├── forgot-password.ejs
+│       └── reset-password.ejs
+└── public/                 # Static assets
+    ├── style.css
+    └── uploads/
+        └── profiles/       # Uploaded profile images
 ```
 
 ## Installation
@@ -160,6 +181,28 @@ node-service/
 | `GET` | `/edit/:id` | Display edit page for a link |
 | `POST` | `/edit/:id` | Update a shortened link |
 | `POST` | `/delete/:shortCodeId` | Delete a shortened link |
+
+### Profile Management
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/profile` | View user profile page |
+| `POST` | `/update-profile` | Update user profile (name, gender) |
+| `POST` | `/upload-profile-image` | Upload profile image |
+| `GET` | `/change-password` | Display change password page |
+| `POST` | `/change-password` | Submit password change |
+| `GET` | `/forgot-password` | Display forgot password page |
+| `POST` | `/forgot-password` | Send password reset email |
+| `GET` | `/reset-password` | Display reset password page |
+| `POST` | `/reset-password` | Submit new password |
+
+### Email Verification
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/send-verification-code` | Send email verification code |
+| `POST` | `/verify-email` | Verify email with code |
+| `GET` | `/verify-email` | Verify email from link |
 
 ## Authentication Flow
 
@@ -330,6 +373,69 @@ async function apiRequest(url, options = {}) {
 | `ip` | VARCHAR(255) | Nullable (client IP address) |
 | `created_at` | TIMESTAMP | Default: NOW() |
 | `updated_at` | TIMESTAMP | Auto-update on modification |
+
+## File Upload
+
+The application uses Multer for handling profile image uploads.
+
+### Configuration
+
+| Setting | Value |
+|---------|-------|
+| Storage Location | `public/uploads/profiles/` |
+| Max File Size | 5 MB |
+| Allowed Types | JPEG, PNG, GIF, WEBP |
+| Filename Format | `profile-{userId}-{timestamp}-{random}.{ext}` |
+
+### Upload Flow
+
+```
+1. User selects image file → POST /upload-profile-image
+2. Multer middleware validates file type and size
+3. File saved to public/uploads/profiles/
+4. Old profile image deleted (if exists)
+5. New image path stored in database
+6. JSON response with image path returned
+```
+
+### Upload Endpoint
+
+**Request:**
+```http
+POST /upload-profile-image
+Content-Type: multipart/form-data
+Cookie: access_token=<token>
+
+profileImage: <file>
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Profile image uploaded successfully",
+  "imagePath": "/uploads/profiles/profile-1-1234567890-123456789.jpg"
+}
+```
+
+**Error Response (400):**
+```json
+{
+  "success": false,
+  "message": "Only image files (JPEG, PNG, GIF, WEBP) are allowed"
+}
+```
+
+## Password Validation
+
+The change password feature uses Zod schema validation:
+
+| Rule | Requirement |
+|------|-------------|
+| Minimum Length | 3 characters |
+| Maximum Length | 100 characters |
+| Confirm Password | Must match new password |
+| Password History | Cannot reuse last 5 passwords |
 
 ## Security Features
 

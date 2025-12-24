@@ -13,6 +13,7 @@ import {
 import { uploadProfileImage } from "../middlewares/upload-middleware.js";
 import fs from "fs";
 import { validateVerificationCode } from "../validators/verification-validator.js";
+import { validateChangePassword } from "../validators/password-validator.js";
 import {
   createVerificationCode,
   verifyCode,
@@ -41,6 +42,8 @@ export const getProfilePage = async (req, res) => {
       profileUser: fullUser,
       sessions,
       currentSessionId,
+      error: req.flash("error"),
+      success: req.flash("success"),
     });
   } catch (error) {
     console.error(error);
@@ -248,7 +251,10 @@ export const getChangePasswordPage = async (req, res) => {
     if (!req.user) {
       return res.redirect("/login");
     }
-    return res.render("profile/change-password");
+    return res.render("profile/change-password", {
+      error: req.flash("error"),
+      success: req.flash("success"),
+    });
   } catch (error) {
     console.error(error);
     return res.status(500).send("Internal server error.");
@@ -261,53 +267,52 @@ export const changePassword = async (req, res) => {
     const userId = req.user?.id;
 
     if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: "Not authenticated",
-      });
+      req.flash("error", "Not authenticated");
+      return res.redirect("/login");
     }
 
-    const { currentPassword, newPassword } = req.body;
-
-    if (!currentPassword || !newPassword) {
-      return res.status(400).json({
-        success: false,
-        message: "Current password and new password are required",
-      });
+    const validation = validateChangePassword(req.body);
+    if (!validation.success) {
+      const errorMessage =
+        validation.error.errors?.[0]?.message ||
+        validation.error.issues?.[0]?.message ||
+        "Invalid input";
+      req.flash("error", errorMessage);
+      return res.redirect("/change-password");
     }
+
+    const { currentPassword, newPassword } = validation.data;
 
     const user = await getUserById(userId);
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
+      req.flash("error", "User not found");
+      return res.redirect("/change-password");
     }
 
-    const isValidPassword = await verifyPassword(currentPassword, user.password);
+    const isValidPassword = await verifyPassword(
+      currentPassword,
+      user.password
+    );
     if (!isValidPassword) {
-      return res.status(400).json({
-        success: false,
-        message: "Current password is incorrect",
-      });
+      req.flash("error", "Current password is incorrect");
+      return res.redirect("/change-password");
     }
 
     // Check if new password matches current password
     const isSameAsCurrent = await verifyPassword(newPassword, user.password);
     if (isSameAsCurrent) {
-      return res.status(400).json({
-        success: false,
-        message: "New password cannot be the same as your current password",
-      });
+      req.flash(
+        "error",
+        "New password cannot be the same as your current password"
+      );
+      return res.redirect("/change-password");
     }
 
     // Check if new password was used in last 5 passwords
     const isInHistory = await isPasswordInHistory(userId, newPassword);
     if (isInHistory) {
-      return res.status(400).json({
-        success: false,
-        message: "New password cannot be one of your last 5 passwords",
-      });
+      req.flash("error", "New password cannot be one of your last 5 passwords");
+      return res.redirect("/change-password");
     }
 
     // Add current password to history before updating
@@ -316,16 +321,12 @@ export const changePassword = async (req, res) => {
     const hashedPassword = await hashPassword(newPassword);
     await updatePassword(userId, hashedPassword);
 
-    return res.status(200).json({
-      success: true,
-      message: "Password changed successfully",
-    });
+    req.flash("success", "Password changed successfully");
+    return res.redirect("/profile");
   } catch (error) {
     console.error(error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to change password",
-    });
+    req.flash("error", "Failed to change password");
+    return res.redirect("/change-password");
   }
 };
 
@@ -359,7 +360,8 @@ export const sendResetPasswordLink = async (req, res) => {
       // Don't reveal if email exists or not for security
       return res.status(200).json({
         success: true,
-        message: "If an account exists with this email, a reset link has been sent",
+        message:
+          "If an account exists with this email, a reset link has been sent",
       });
     }
 
@@ -367,7 +369,8 @@ export const sendResetPasswordLink = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "If an account exists with this email, a reset link has been sent",
+      message:
+        "If an account exists with this email, a reset link has been sent",
     });
   } catch (error) {
     console.error(error);
