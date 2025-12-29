@@ -1,25 +1,35 @@
 import nodemailer from "nodemailer";
+import mjml2html from "mjml";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import { Resend } from "resend";
 
-// const createTransporter = () => {
-//   return nodemailer.createTransport({
-//     service: "gmail",
-//     auth: {
-//       user: process.env.GMAIL_USER,
-//       pass: process.env.GMAIL_APP_PASSWORD,
-//     },
-//   });
-// };
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const createTransporter = () => {
   return nodemailer.createTransport({
-    host: "smtp.ethereal.email",
-    port: 587,
+    service: "gmail",
     auth: {
       user: process.env.GMAIL_USER,
       pass: process.env.GMAIL_APP_PASSWORD,
     },
   });
 };
+
+const resend = new Resend(process.env.GMAIL_RESEND_API_KEY);
+
+// const createTransporter = () => {
+//   return nodemailer.createTransport({
+//     host: "smtp.ethereal.email",
+//     port: 587,
+//     auth: {
+//       user: process.env.GMAIL_USER,
+//       pass: process.env.GMAIL_APP_PASSWORD,
+//     },
+//   });
+// };
 
 export const sendVerificationEmail = async (email, code) => {
   const verifyLink = createVerifyLink(email, code);
@@ -59,9 +69,34 @@ export const sendEmail = async (toEmail, subject, html) => {
     html: html,
   };
 
+  // send email using nodemailer https://ethereal.email/ testing
+  // const info = await transporter.sendMail(mailOptions);
+  // const testEmailUrl = nodemailer.getTestMessageUrl(info);
+  // console.log("verify Email : ", testEmailUrl);
+
+  // send email using nodemailer google email configuration
   const info = await transporter.sendMail(mailOptions);
   const testEmailUrl = nodemailer.getTestMessageUrl(info);
   console.log("verify Email : ", testEmailUrl);
+};
+
+export const sendEmailUsingResendAPI = async (toEmail, subject, html) => {
+  try {
+    const mailOptions = {
+      from: process.env.GMAIL_RESEND_USER,
+      to: [toEmail],
+      subject: subject,
+      html: html,
+    };
+    const { data, error } = await resend.emails.send(mailOptions);
+    if (error) {
+      console.error(error);
+    } else {
+      console.log(data);
+    }
+  } catch (error) {
+    console.error("Email send error", error);
+  }
 };
 
 const createVerifyLink = (email, code) => {
@@ -71,29 +106,32 @@ const createVerifyLink = (email, code) => {
 
 export const sendResetPasswordEmail = async (email, code) => {
   const resetLink = createResetPasswordLink(email, code);
+
+  // Read and compile MJML template
+  const templatePath = path.join(
+    __dirname,
+    "../templates/email/reset-password.mjml"
+  );
+  const mjmlTemplate = fs.readFileSync(templatePath, "utf8");
+
+  // Replace placeholder with actual reset link
+  const mjmlWithData = mjmlTemplate.replace("{{resetLink}}", resetLink);
+
+  // Convert MJML to HTML
+  const { html } = mjml2html(mjmlWithData);
+
   const mailOptions = {
     to: email,
     subject: "Reset Your Password - AlisterBank",
-    html: `
-      <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2 style="color: #333; margin-bottom: 20px;">Reset Your Password</h2>
-        <p style="color: #666; font-size: 16px; line-height: 1.5;">
-          We received a request to reset your password. Click the button below to create a new password:
-        </p>
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="${resetLink}" style="background-color: #007bff; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-size: 16px;">Reset Password</a>
-        </div>
-        <p style="color: #666; font-size: 14px; line-height: 1.5;">
-          This link will expire in <strong>10 minutes</strong>.
-        </p>
-        <p style="color: #999; font-size: 12px; margin-top: 30px;">
-          If you didn't request a password reset, please ignore this email or contact support if you have concerns.
-        </p>
-      </div>
-    `,
+    html: html,
   };
 
-  await sendEmail(mailOptions.to, mailOptions.subject, mailOptions.html);
+  // await sendEmail(mailOptions.to, mailOptions.subject, mailOptions.html);
+  await sendEmail(
+    mailOptions.to,
+    mailOptions.subject,
+    mailOptions.html
+  );
 };
 
 const createResetPasswordLink = (email, code) => {

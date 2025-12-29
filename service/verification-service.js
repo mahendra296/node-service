@@ -1,6 +1,7 @@
 import { db } from "../config/db.js";
 import { usersTable, verificationCodesTable } from "../drizzle/schema.js";
 import { eq, and, gt, desc, sql } from "drizzle-orm";
+import crypto from "crypto";
 import {
   VERIFICATION_CODE_EXPIRY,
   VERIFICATION_CODE_LENGTH,
@@ -125,7 +126,8 @@ export const deleteExpiredCodes = async () => {
 };
 
 export const createResetPasswordCode = async (userId, email) => {
-  const code = generateVerificationCode();
+  const randomToken = crypto.randomBytes(32).toString("hex");
+  const code = crypto.createHash("sha256").update(randomToken).digest("hex");
   const expiryMinutes = VERIFICATION_CODE_EXPIRY / 1000 / 60;
 
   await db.insert(verificationCodesTable).values({
@@ -135,12 +137,13 @@ export const createResetPasswordCode = async (userId, email) => {
     sendType: "EMAIL",
   });
 
-  await sendResetPasswordEmail(email, code);
+  await sendResetPasswordEmail(email, randomToken);
 
   return { success: true };
 };
 
 export const verifyResetPasswordCode = async (userId, code) => {
+  const hashCode = crypto.createHash("sha256").update(code).digest("hex");
   const [latestCode] = await db
     .select()
     .from(verificationCodesTable)
@@ -158,7 +161,7 @@ export const verifyResetPasswordCode = async (userId, code) => {
     return { success: false, message: "Reset link has expired or is invalid" };
   }
 
-  if (latestCode.code !== code) {
+  if (latestCode.code !== hashCode) {
     return { success: false, message: "Invalid reset link" };
   }
 
