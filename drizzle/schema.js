@@ -1,6 +1,5 @@
 import { relations } from "drizzle-orm";
 import {
-  int,
   bigint,
   mysqlTable,
   varchar,
@@ -53,7 +52,7 @@ export const verificationCodesTable = mysqlTable("verification_codes", {
   userId: bigint("user_id", { mode: "number" })
     .notNull()
     .references(() => usersTable.id, { onDelete: "cascade" }),
-  code: varchar({ length: 10 }).notNull(),
+  code: varchar({ length: 255 }).notNull(),
   expiresAt: timestamp("expires_at").notNull(),
   sendType: varchar("send_type", { length: 10 }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
