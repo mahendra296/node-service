@@ -5,6 +5,7 @@ A full-stack Node.js web application featuring URL shortening functionality with
 ## Features
 
 - **User Authentication**: Secure registration and login with JWT tokens
+- **OAuth Authentication**: Google and GitHub sign-in using Arctic
 - **Token Refresh**: Database-managed refresh tokens with revocation support
 - **Multi-Device Logout**: Ability to logout from all devices at once
 - **URL Shortener**: Create, edit, and delete shortened URLs
@@ -28,6 +29,7 @@ A full-stack Node.js web application featuring URL shortening functionality with
 | ORM | Drizzle ORM |
 | Templating | EJS |
 | Authentication | JWT (jsonwebtoken) |
+| OAuth | Arctic (Google, GitHub) |
 | Password Hashing | Argon2 |
 | Validation | Zod |
 | File Upload | Multer |
@@ -42,7 +44,9 @@ node-service/
 ├── .env                     # Environment variables
 ├── config/
 │   ├── db.js               # Database connection configuration
-│   └── constant.js         # Application constants
+│   ├── constant.js         # Application constants
+│   ├── env.js              # Environment validation with Zod
+│   └── google.js           # Google OAuth configuration
 ├── controller/
 │   ├── authController.js   # Authentication handlers
 │   ├── profileController.js # Profile & password handlers
@@ -50,7 +54,8 @@ node-service/
 ├── service/
 │   ├── auth-service.js     # Authentication business logic
 │   ├── profile-service.js  # Profile business logic
-│   └── verification-service.js # Email verification logic
+│   ├── verification-service.js # Email verification logic
+│   └── google-auth-service.js  # Google OAuth service
 ├── model/
 │   └── shortner-model.js   # Database queries for URL shortener
 ├── routes/
@@ -138,13 +143,37 @@ node-service/
 
 ## Environment Variables
 
+Environment variables are validated using Zod schema in `config/env.js`. The application will fail to start if required variables are missing or invalid.
+
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `PORT` | Server port number | No (default: 3000) |
+| `PORT` | Server port number | No (default: 3001) |
+| `NODE_ENV` | Environment mode (development/production/test) | No (default: development) |
 | `DATABASE_URL` | MySQL connection string | Yes |
 | `JWT_SECRET` | Secret key for access token signing | Yes |
 | `REFRESH_TOKEN_SECRET` | Secret key for refresh token signing | Yes |
-| `SESSION_SECRET` | Secret key for session management | No (has default) |
+| `FRONTEND_URL` | Frontend URL for OAuth callbacks | No (default: http://localhost:3001) |
+| `GOOGLE_CLIENT_ID` | Google OAuth client ID | Yes (for OAuth) |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret | Yes (for OAuth) |
+| `GOOGLE_CALLBACK_URL` | Google OAuth callback URL | Yes (for OAuth) |
+| `GITHUB_CLIENT_ID` | GitHub OAuth client ID | No |
+| `GITHUB_CLIENT_SECRET` | GitHub OAuth client secret | No |
+| `GITHUB_CALLBACK_URL` | GitHub OAuth callback URL | No |
+| `GMAIL_USER` | Gmail address for sending emails | No |
+| `GMAIL_APP_PASSWORD` | Gmail app password | No |
+| `GMAIL_RESEND_API_KEY` | Resend API key for emails | No |
+| `TWILIO_ACCOUNT_SID` | Twilio account SID for SMS | No |
+| `TWILIO_AUTH_TOKEN` | Twilio auth token | No |
+| `TWILIO_PHONE_NUMBER` | Twilio phone number | No |
+
+### Google OAuth Setup
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select existing
+3. Enable Google+ API or People API
+4. Go to Credentials → Create Credentials → OAuth 2.0 Client ID
+5. Set authorized redirect URI: `http://localhost:3001/auth/google/callback`
+6. Copy Client ID and Client Secret to `.env`
 
 ## NPM Scripts
 
@@ -169,6 +198,10 @@ node-service/
 | `GET` | `/logout` | Logout user and clear tokens |
 | `POST` | `/refresh-token` | Refresh access token |
 | `POST` | `/logout-all-devices` | Revoke all refresh tokens for user |
+| `GET` | `/auth/google` | Initiate Google OAuth login |
+| `GET` | `/auth/google/callback` | Google OAuth callback handler |
+| `GET` | `/auth/github` | Initiate GitHub OAuth login |
+| `GET` | `/auth/github/callback` | GitHub OAuth callback handler |
 
 ### URL Shortener
 

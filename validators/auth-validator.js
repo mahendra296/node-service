@@ -26,11 +26,21 @@ export const registrationSchema = z.object({
     .toLowerCase()
     .trim(),
 
+  countryCode: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || /^\+[0-9]{1,4}$/.test(val),
+      "Please select a valid country code"
+    ),
+
   phone: z
-    .string({ required_error: "Phone number is required" })
-    .min(10, "Phone number must be at least 10 digits")
-    .max(15, "Phone number must be less than 15 digits")
-    .regex(/^[0-9+\-\s()]+$/, "Please enter a valid phone number"),
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || (val.length >= 10 && val.length <= 15 && /^[0-9]+$/.test(val)),
+      "Phone number must be 10-15 digits"
+    ),
 
   password: z
     .string({ required_error: "Password is required" })
@@ -44,7 +54,31 @@ export const registrationSchema = z.object({
   terms: z
     .string({ required_error: "You must agree to the terms" })
     .refine((val) => val === "on", "You must agree to the terms"),
-});
+}).refine(
+  (data) => {
+    // If phone is provided, countryCode must also be provided
+    if (data.phone && !data.countryCode) {
+      return false;
+    }
+    return true;
+  },
+  {
+    message: "Please select a country code for your phone number",
+    path: ["countryCode"],
+  }
+).refine(
+  (data) => {
+    // If countryCode is provided, phone must also be provided
+    if (data.countryCode && !data.phone) {
+      return false;
+    }
+    return true;
+  },
+  {
+    message: "Please enter your phone number",
+    path: ["phone"],
+  }
+);
 
 export const loginSchema = z.object({
   email: z

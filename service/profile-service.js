@@ -1,6 +1,6 @@
 import { db } from "../config/db.js";
-import { usersTable, refreshTokensTable, passwordHistoryTable } from "../drizzle/schema.js";
-import { eq, and, desc } from "drizzle-orm";
+import { usersTable, refreshTokensTable, passwordHistoryTable, countryCodesTable } from "../drizzle/schema.js";
+import { eq, and, desc, asc } from "drizzle-orm";
 import argon2 from "argon2";
 
 export const getUserById = async (userId) => {
@@ -43,10 +43,16 @@ export const updateProfileImage = async (userId, imagePath) => {
     .where(eq(usersTable.id, userId));
 };
 
-export const updateUserProfile = async (userId, { firstName, lastName, gender }) => {
+export const updateUserProfile = async (userId, { firstName, lastName, gender, countryCode, phone }) => {
+  const updateData = { firstName, lastName };
+
+  if (gender !== undefined) updateData.gender = gender || null;
+  if (countryCode !== undefined) updateData.countryCode = countryCode || null;
+  if (phone !== undefined) updateData.phone = phone || null;
+
   await db
     .update(usersTable)
-    .set({ firstName, lastName, gender })
+    .set(updateData)
     .where(eq(usersTable.id, userId));
 };
 
@@ -111,4 +117,11 @@ export const isPasswordInHistory = async (userId, plainPassword) => {
   }
 
   return false;
+};
+
+export const getCountryCodes = async () => {
+  return await db
+    .select()
+    .from(countryCodesTable)
+    .orderBy(asc(countryCodesTable.country));
 };

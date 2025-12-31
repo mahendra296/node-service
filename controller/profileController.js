@@ -9,17 +9,20 @@ import {
   updatePassword,
   isPasswordInHistory,
   addPasswordToHistory,
+  getCountryCodes,
 } from "../service/profile-service.js";
 import { uploadProfileImage } from "../middlewares/upload-middleware.js";
 import fs from "fs";
 import { validateVerificationCode } from "../validators/verification-validator.js";
 import { validateChangePassword } from "../validators/password-validator.js";
+import { validateEditProfile } from "../validators/profile-validator.js";
 import {
   createVerificationCode,
   verifyCode,
   createResetPasswordCode,
   verifyResetPasswordCode,
 } from "../service/verification-service.js";
+import { getUserByPhone } from "../service/auth-service.js";
 
 // Profile Page
 export const getProfilePage = async (req, res) => {
@@ -500,5 +503,73 @@ export const updateProfile = async (req, res) => {
       success: false,
       message: "Failed to update profile",
     });
+  }
+};
+
+// Get Edit Profile Page
+export const getEditProfilePage = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.redirect("/login");
+    }
+
+    const fullUser = await getUserById(req.user.id);
+    if (!fullUser) {
+      return res.redirect("/login");
+    }
+
+    const countryCodes = await getCountryCodes();
+
+    return res.render("profile/edit-profile", {
+      profileUser: fullUser,
+      countryCodes,
+      error: req.flash("error"),
+      success: req.flash("success"),
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send("Internal server error.");
+  }
+};
+
+// Submit Edit Profile
+export const submitEditProfile = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      req.flash("error", "Not authenticated");
+      return res.redirect("/login");
+    }
+
+    const validation = validateEditProfile(req.body);
+    if (!validation.success) {
+      const errorMessage =
+        validation.error.errors?.[0]?.message ||
+        validation.error.issues?.[0]?.message ||
+        "Invalid input";
+      req.flash("error", errorMessage);
+      return res.redirect("/profile/edit");
+    }
+
+    const { firstName, lastName, gender, countryCode, phone } = validation.data;
+
+    // Check if phone number already exists for another user
+    if (phone && countryCode) {
+      const existingUser = await getUserByPhone(countryCode, phone);
+      if (existingUser && existingUser.id !== userId) {
+        req.flash("error", "Phone number is already registered");
+        return res.redirect("/profile/edit");
+      }
+    }
+
+    await updateUserProfile(userId, { firstName, lastName, gender, countryCode, phone });
+
+    req.flash("success", "Profile updated successfully");
+    return res.redirect("/profile");
+  } catch (error) {
+    console.error(error);
+    req.flash("error", "Failed to update profile");
+    return res.redirect("/profile/edit");
   }
 };

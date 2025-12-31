@@ -1,5 +1,9 @@
 import { db } from "../config/db.js";
-import { usersTable, refreshTokensTable } from "../drizzle/schema.js";
+import {
+  usersTable,
+  refreshTokensTable,
+  oauthAccountsTable,
+} from "../drizzle/schema.js";
 import { eq, and, gt } from "drizzle-orm";
 import jwt from "jsonwebtoken";
 import argon2 from "argon2";
@@ -24,11 +28,11 @@ export const getUserByEmail = async (email) => {
   return user;
 };
 
-export const getUserByPhone = async (phone) => {
+export const getUserByPhone = async (countryCode, phone) => {
   const [user] = await db
     .select()
     .from(usersTable)
-    .where(eq(usersTable.phone, phone));
+    .where(and(eq(usersTable.countryCode, countryCode), eq(usersTable.phone, phone)));
 
   return user;
 };
@@ -233,3 +237,105 @@ export const loadSessionsIntoCache = async () => {
   console.log(`Loaded ${sessions.length} active sessions into cache`);
 };
 
+// OAuth Account functions
+export const getUserWithAuthId = async (provider, email) => {
+  const [account] = await db
+    .select({
+      id: usersTable.id,
+      firstName: usersTable.firstName,
+      lastName: usersTable.lastName,
+      email: usersTable.email,
+      isEmailVerified: usersTable.isEmailVerified,
+      phone: usersTable.phone,
+      countryCode: usersTable.countryCode,
+      gender: usersTable.gender,
+      providerAccountId: oauthAccountsTable.providerAccountId,
+      provider: oauthAccountsTable.provider,
+    })
+    .from(usersTable)
+    .where(eq(usersTable.email, email))
+    .leftJoin(
+      oauthAccountsTable,
+      and(
+        eq(oauthAccountsTable.provider, provider),
+        eq(oauthAccountsTable.userId, usersTable.id)
+      )
+    );
+
+  return account;
+};
+
+export const createOAuthAccount = async ({
+  userId,
+  provider,
+  providerAccountId,
+}) => {
+  const result = await db
+    .insert(oauthAccountsTable)
+    .values({
+      userId,
+      provider,
+      providerAccountId,
+    })
+    .$returningId();
+
+  return result;
+};
+
+export const createUserWithOauth = async ({
+  googleUser,
+  provider,
+  providerAccountId,
+}) => {
+  // Create new user from Google profile
+  const nameParts = (googleUser.name || "").split(" ");
+  const firstName = nameParts[0] || googleUser.given_name || "";
+  const lastName = nameParts.slice(1).join(" ") || googleUser.family_name || "";
+  const email = googleUser.email;
+
+  const user = await db.transaction(async (trx) => {
+    const [user] = await trx
+      .insert(usersTable)
+      .values({
+        firstName,
+        lastName,
+        gender: null,
+        email,
+        countryCode: null,
+        phone: null,
+        password: null,
+        isEmailVerified: true,
+      })
+      .$returningId();
+
+    await trx
+      .insert(oauthAccountsTable)
+      .values({
+        userId: user.id,
+        provider,
+        providerAccountId,
+      })
+      .$returningId();
+
+    return {
+      id: user.id,
+      firstName,
+      lastName,
+      email,
+      isEmailVerified: true,
+      provider,
+      providerAccountId,
+    };
+  });
+
+  return user;
+};
+
+export const getOAuthAccountsByUserId = async (userId) => {
+  const accounts = await db
+    .select()
+    .from(oauthAccountsTable)
+    .where(eq(oauthAccountsTable.userId, userId));
+
+  return accounts;
+};

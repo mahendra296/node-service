@@ -27,6 +27,10 @@ router.get("/login-otp", authController.getOtpLoginPage);
 router.post("/send-login-otp", authController.sendLoginOtp);
 router.post("/verify-login-otp", authController.verifyLoginOtp);
 
+// Google OAuth routes
+router.get("/auth/google", authController.initiateGoogleLogin);
+router.get("/auth/google/callback", authController.handleGoogleCallback);
+
 // Profile routes
 router.get("/profile", profileController.getProfilePage);
 router.post("/send-verification-code", profileController.sendVerificationCode);
@@ -39,8 +43,11 @@ router
 // Profile image upload
 router.post("/upload-profile-image", profileController.uploadUserProfileImage);
 
-// Update profile (firstName, lastName, gender)
-router.post("/update-profile", profileController.updateProfile);
+// Edit profile page
+router
+  .route("/profile/edit")
+  .get(profileController.getEditProfilePage)
+  .post(profileController.submitEditProfile);
 
 // Change password (for logged-in users)
 router

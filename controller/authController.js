@@ -1,12 +1,12 @@
 import {
   ACCESS_TOKEN_EXPIRY,
+  OAUTH_EXCHANGE_EXPIRY,
   REFRESH_TOKEN_EXPIRY,
 } from "../config/constant.js";
 import {
   createUser,
   getUserByEmail,
   getUserByPhone,
-  getUserById,
   hashPassword,
   verifyPassword,
   generateJwtToken,
@@ -17,6 +17,9 @@ import {
   deleteRefreshTokenById,
   deleteRefreshTokenByUserId,
   getSessionsByUserId,
+  createOAuthAccount,
+  createUserWithOauth,
+  getUserWithAuthId,
 } from "../service/auth-service.js";
 import {
   validateLogin,
@@ -26,6 +29,12 @@ import {
   createVerificationCode,
   verifyOtpForLogin,
 } from "../service/verification-service.js";
+import {
+  createGoogleAuthorizationURL,
+  validateGoogleCallback,
+  getGoogleUserInfo,
+} from "../service/google-auth-service.js";
+import { getCountryCodes } from "../service/profile-service.js";
 
 export const getDashboardPage = async (req, res) => {
   try {
@@ -119,15 +128,20 @@ export const submitLogin = async (req, res) => {
 };
 
 export const getRegisterPage = async (req, res) => {
+  const countryCodes = await getCountryCodes();
   return res.render("register", {
     error: req.flash("error"),
     success: req.flash("success"),
     formData: {},
+    countryCodes,
   });
 };
 
 export const submitRegistration = async (req, res) => {
-  const { firstName, lastName, gender, email, password, countryCode, phone } = req.body;
+  const { firstName, lastName, gender, email, password, countryCode, phone } =
+    req.body;
+
+  const countryCodes = await getCountryCodes();
 
   // Validate input
   const validation = validateRegistration(req.body);
@@ -141,6 +155,7 @@ export const submitRegistration = async (req, res) => {
       error: [errorMessage],
       success: [],
       formData: { firstName, lastName, gender, email, countryCode, phone },
+      countryCodes,
     });
   }
 
@@ -152,7 +167,21 @@ export const submitRegistration = async (req, res) => {
         error: ["User already exists with this email"],
         success: [],
         formData: { firstName, lastName, gender, email, countryCode, phone },
+        countryCodes,
       });
+    }
+
+    // Check if phone number already exists
+    if (phone && countryCode) {
+      const phoneExists = await getUserByPhone(countryCode, phone);
+      if (phoneExists) {
+        return res.render("register", {
+          error: ["Phone number is already registered"],
+          success: [],
+          formData: { firstName, lastName, gender, email, countryCode, phone },
+          countryCodes,
+        });
+      }
     }
 
     const hashedPassword = await hashPassword(password);
@@ -174,6 +203,7 @@ export const submitRegistration = async (req, res) => {
       error: ["Something went wrong. Please try again."],
       success: [],
       formData: { firstName, lastName, gender, email, countryCode, phone },
+      countryCodes,
     });
   }
 };
@@ -302,16 +332,16 @@ export const getOtpLoginPage = async (req, res) => {
 
 export const sendLoginOtp = async (req, res) => {
   try {
-    const { phone } = req.body;
+    const { countryCode, phone } = req.body;
 
-    if (!phone) {
+    if (!countryCode || !phone) {
       return res.status(400).json({
         success: false,
-        message: "Phone number is required",
+        message: "Country code and phone number are required",
       });
     }
 
-    const user = await getUserByPhone(phone);
+    const user = await getUserByPhone(countryCode, phone);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -319,7 +349,7 @@ export const sendLoginOtp = async (req, res) => {
       });
     }
 
-    await createVerificationCode(user.id, user.countryCode + phone, "SMS");
+    await createVerificationCode(user.id, countryCode + phone, "SMS");
 
     return res.status(200).json({
       success: true,
@@ -336,16 +366,16 @@ export const sendLoginOtp = async (req, res) => {
 
 export const verifyLoginOtp = async (req, res) => {
   try {
-    const { phone, otp } = req.body;
+    const { countryCode, phone, otp } = req.body;
 
-    if (!phone || !otp) {
+    if (!countryCode || !phone || !otp) {
       return res.status(400).json({
         success: false,
-        message: "Phone number and OTP are required",
+        message: "Country code, phone number and OTP are required",
       });
     }
 
-    const user = await getUserByPhone(phone);
+    const user = await getUserByPhone(countryCode, phone);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -401,5 +431,112 @@ export const verifyLoginOtp = async (req, res) => {
       success: false,
       message: "Failed to verify OTP",
     });
+  }
+};
+
+// Google OAuth handlers
+export const initiateGoogleLogin = async (req, res) => {
+  try {
+    if (req.user) redirect("/");
+
+    const { url, state, codeVerifier } = await createGoogleAuthorizationURL();
+
+    const cookieConfig = {
+      httpOnly: true,
+      secure: true,
+      maxAge: OAUTH_EXCHANGE_EXPIRY,
+      sameSite: "lax",
+    };
+
+    res.cookie("google_oauth_state", state, cookieConfig);
+    res.cookie("google_code_verifier", codeVerifier, cookieConfig);
+
+    return res.redirect(url.toString());
+  } catch (error) {
+    console.error("Error initiating Google login:", error);
+    req.flash("error", "Failed to initiate Google login");
+    return res.redirect("/login");
+  }
+};
+
+export const handleGoogleCallback = async (req, res) => {
+  try {
+    const { code, state } = req.query;
+
+    const {
+      google_oauth_state: storedState,
+      google_code_verifier: storedCodeVerifier,
+    } = req.cookies;
+
+    // Validate state
+    if (state !== storedState) {
+      req.flash("error", "Invalid OAuth state");
+      return res.redirect("/login");
+    }
+
+    // Exchange code for tokens
+    const tokens = await validateGoogleCallback(code, storedCodeVerifier);
+    console.log(tokens);
+
+    const accessToken = tokens.accessToken();
+
+    // Get user info from Google
+    const googleUser = await getGoogleUserInfo(accessToken);
+    const googleId = googleUser.id;
+
+    // Check if OAuth account already exists
+    let user = await getUserWithAuthId("google", googleUser.email);
+
+    // if user is exists but not linked with oauth
+    if (user && !user.providerAccountId) {
+      await createOAuthAccount({
+        userId: user.id,
+        provider: "google",
+        providerAccountId: googleId,
+      });
+    }
+
+    if (!user) {
+      user = await createUserWithOauth({
+        googleUser: googleUser,
+        provider: "google",
+        providerAccountId: googleId,
+      });
+    }
+
+    // Create session
+    const session = await createSession(user.id, {
+      ip: req.clientIp,
+      userAgent: req.headers["user-agent"],
+    });
+
+    const jwtToken = await generateJwtToken({
+      id: user.id,
+      name: `${user.firstName} ${user.lastName}`,
+      email: user.email,
+      refreshTokenId: session.id,
+    });
+
+    const refreshTokenValue = await generateRefreshToken({
+      refreshTokenId: session.id,
+    });
+
+    const baseConfig = { httpOnly: true, secure: true };
+
+    res.cookie("access_token", jwtToken, {
+      ...baseConfig,
+      maxAge: ACCESS_TOKEN_EXPIRY,
+    });
+
+    res.cookie("refresh_token", refreshTokenValue, {
+      ...baseConfig,
+      maxAge: REFRESH_TOKEN_EXPIRY,
+    });
+
+    return res.redirect("/");
+  } catch (error) {
+    console.error("Error handling Google callback:", error);
+    req.flash("error", "Google login failed");
+    return res.redirect("/login");
   }
 };
