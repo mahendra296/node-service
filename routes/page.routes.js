@@ -31,6 +31,10 @@ router.post("/verify-login-otp", authController.verifyLoginOtp);
 router.get("/auth/google", authController.initiateGoogleLogin);
 router.get("/auth/google/callback", authController.handleGoogleCallback);
 
+// Github OAuth routes
+router.get("/auth/github", authController.initiateGitHubLogin);
+router.get("/auth/github/callback", authController.handleGitHubCallback);
+
 // Profile routes
 router.get("/profile", profileController.getProfilePage);
 router.post("/send-verification-code", profileController.sendVerificationCode);

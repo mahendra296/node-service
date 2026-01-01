@@ -6,7 +6,8 @@ import requestIp from "request-ip";
 
 import { shortenRouter } from "./routes/page.routes.js";
 import { verifyAuthToken } from "./middlewares/verify-auth-middleware.js";
-import { loadSessionsIntoCache, getUserById } from "./service/auth-service.js";
+import { loadSessionsIntoCache } from "./service/auth-service.js";
+import { getUserById } from "./service/user-service.js";
 
 const app = express();
 
@@ -51,6 +52,7 @@ app.use(async (req, res, next) => {
 app.set("view engine", "ejs");
 
 app.use(shortenRouter);
+
 // 404 handler - must be after all other routes
 app.use((req, res) => {
   res.status(404).render("404");

@@ -3,24 +3,6 @@ import { usersTable, refreshTokensTable, passwordHistoryTable, countryCodesTable
 import { eq, and, desc, asc } from "drizzle-orm";
 import argon2 from "argon2";
 
-export const getUserById = async (userId) => {
-  const [user] = await db
-    .select()
-    .from(usersTable)
-    .where(eq(usersTable.id, userId));
-
-  return user;
-};
-
-export const getUserByEmail = async (email) => {
-  const [user] = await db
-    .select()
-    .from(usersTable)
-    .where(eq(usersTable.email, email));
-
-  return user;
-};
-
 export const getSessionsByUserId = async (userId) => {
   const sessions = await db
     .select()

@@ -11,7 +11,7 @@ import {
   validateShortner,
   validateShortnerUpdate,
 } from "../validators/shortner-validator.js";
-import { getUserById } from "../service/auth-service.js";
+import { getUserById } from "../service/user-service.js";
 
 export const getShortnerPage = async (req, res) => {
   try {

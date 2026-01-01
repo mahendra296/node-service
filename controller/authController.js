@@ -4,9 +4,6 @@ import {
   REFRESH_TOKEN_EXPIRY,
 } from "../config/constant.js";
 import {
-  createUser,
-  getUserByEmail,
-  getUserByPhone,
   hashPassword,
   verifyPassword,
   generateJwtToken,
@@ -17,10 +14,8 @@ import {
   deleteRefreshTokenById,
   deleteRefreshTokenByUserId,
   getSessionsByUserId,
-  createOAuthAccount,
-  createUserWithOauth,
-  getUserWithAuthId,
 } from "../service/auth-service.js";
+import * as userService from "../service/user-service.js";
 import {
   validateLogin,
   validateRegistration,
@@ -35,6 +30,12 @@ import {
   getGoogleUserInfo,
 } from "../service/google-auth-service.js";
 import { getCountryCodes } from "../service/profile-service.js";
+import {
+  createGithubAuthorizationURL,
+  getGitHubEmails,
+  getGitHubUserInfo,
+  validateGithubCallback,
+} from "../service/github-auth-service.js";
 
 export const getDashboardPage = async (req, res) => {
   try {
@@ -83,7 +84,7 @@ export const submitLogin = async (req, res) => {
 
   const { email, password } = req.body;
 
-  const user = await getUserByEmail(email);
+  const user = await userService.getUserByEmail(email);
 
   if (!user) {
     req.flash("error", "Invalid email or password");
@@ -96,33 +97,7 @@ export const submitLogin = async (req, res) => {
     return res.redirect("/login");
   }
 
-  const session = await createSession(user.id, {
-    ip: req.clientIp,
-    userAgent: req.headers["user-agent"],
-  });
-
-  const jwtToken = await generateJwtToken({
-    id: user.id,
-    name: `${user.firstName} ${user.lastName}`,
-    email: user.email,
-    refreshTokenId: session.id,
-  });
-
-  const refreshTokenValue = await generateRefreshToken({
-    refreshTokenId: session.id,
-  });
-
-  const baseConfig = { httpOnly: true, secure: true };
-
-  res.cookie("access_token", jwtToken, {
-    ...baseConfig,
-    maxAge: ACCESS_TOKEN_EXPIRY,
-  });
-
-  res.cookie("refresh_token", refreshTokenValue, {
-    ...baseConfig,
-    maxAge: REFRESH_TOKEN_EXPIRY,
-  });
+  await setAccessAndRefreshToken(user, req, res);
 
   res.redirect("/");
 };
@@ -160,7 +135,7 @@ export const submitRegistration = async (req, res) => {
   }
 
   try {
-    const userExists = await getUserByEmail(email);
+    const userExists = await userService.getUserByEmail(email);
 
     if (userExists) {
       return res.render("register", {
@@ -173,7 +148,7 @@ export const submitRegistration = async (req, res) => {
 
     // Check if phone number already exists
     if (phone && countryCode) {
-      const phoneExists = await getUserByPhone(countryCode, phone);
+      const phoneExists = await userService.getUserByPhone(countryCode, phone);
       if (phoneExists) {
         return res.render("register", {
           error: ["Phone number is already registered"],
@@ -185,7 +160,7 @@ export const submitRegistration = async (req, res) => {
     }
 
     const hashedPassword = await hashPassword(password);
-    await createUser({
+    await userService.createUser({
       firstName,
       lastName,
       gender,
@@ -341,7 +316,7 @@ export const sendLoginOtp = async (req, res) => {
       });
     }
 
-    const user = await getUserByPhone(countryCode, phone);
+    const user = await userService.getUserByPhone(countryCode, phone);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -375,7 +350,7 @@ export const verifyLoginOtp = async (req, res) => {
       });
     }
 
-    const user = await getUserByPhone(countryCode, phone);
+    const user = await userService.getUserByPhone(countryCode, phone);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -485,11 +460,11 @@ export const handleGoogleCallback = async (req, res) => {
     const googleId = googleUser.id;
 
     // Check if OAuth account already exists
-    let user = await getUserWithAuthId("google", googleUser.email);
+    let user = await userService.getUserWithAuthId("google", googleUser.email);
 
     // if user is exists but not linked with oauth
     if (user && !user.providerAccountId) {
-      await createOAuthAccount({
+      await userService.createOAuthAccount({
         userId: user.id,
         provider: "google",
         providerAccountId: googleId,
@@ -497,41 +472,16 @@ export const handleGoogleCallback = async (req, res) => {
     }
 
     if (!user) {
-      user = await createUserWithOauth({
-        googleUser: googleUser,
+      user = await userService.createUserWithOauth({
+        providerUser: googleUser,
         provider: "google",
         providerAccountId: googleId,
+        email: googleUser.email,
       });
     }
 
     // Create session
-    const session = await createSession(user.id, {
-      ip: req.clientIp,
-      userAgent: req.headers["user-agent"],
-    });
-
-    const jwtToken = await generateJwtToken({
-      id: user.id,
-      name: `${user.firstName} ${user.lastName}`,
-      email: user.email,
-      refreshTokenId: session.id,
-    });
-
-    const refreshTokenValue = await generateRefreshToken({
-      refreshTokenId: session.id,
-    });
-
-    const baseConfig = { httpOnly: true, secure: true };
-
-    res.cookie("access_token", jwtToken, {
-      ...baseConfig,
-      maxAge: ACCESS_TOKEN_EXPIRY,
-    });
-
-    res.cookie("refresh_token", refreshTokenValue, {
-      ...baseConfig,
-      maxAge: REFRESH_TOKEN_EXPIRY,
-    });
+    await setAccessAndRefreshToken(user, req, res);
 
     return res.redirect("/");
   } catch (error) {
@@ -540,3 +490,114 @@ export const handleGoogleCallback = async (req, res) => {
     return res.redirect("/login");
   }
 };
+
+export const initiateGitHubLogin = async (req, res) => {
+  try {
+    if (req.user) redirect("/");
+
+    const { url, state } = await createGithubAuthorizationURL();
+
+    const cookieConfig = {
+      httpOnly: true,
+      secure: true,
+      maxAge: OAUTH_EXCHANGE_EXPIRY,
+      sameSite: "lax",
+    };
+
+    res.cookie("github_oauth_state", state, cookieConfig);
+
+    return res.redirect(url.toString());
+  } catch (error) {
+    console.error("Error initiating github login:", error);
+    req.flash("error", "Failed to initiate github login");
+    return res.redirect("/login");
+  }
+};
+
+export const handleGitHubCallback = async (req, res) => {
+  try {
+    const { code, state } = req.query;
+
+    const { github_oauth_state: storedState } = req.cookies;
+
+    // Validate state
+    if (state !== storedState) {
+      req.flash("error", "Invalid OAuth state");
+      return res.redirect("/login");
+    }
+
+    // Exchange code for tokens
+    const tokens = await validateGithubCallback(code);
+    console.log(tokens);
+
+    const accessToken = tokens.accessToken();
+
+    // Get user info from Google
+    const gitHubUser = await getGitHubUserInfo(accessToken);
+    const gitHubUserEmails = await getGitHubEmails(accessToken);
+    const email = gitHubUserEmails.filter((e) => e.primary)[0].email;
+    const gitHubUserId = gitHubUser.id;
+
+    // Check if OAuth account already exists
+    let user = await userService.getUserWithAuthId("github", email);
+
+    // if user is exists but not linked with oauth
+    if (user && !user.providerAccountId) {
+      await userService.createOAuthAccount({
+        userId: user.id,
+        provider: "github",
+        providerAccountId: gitHubUserId,
+      });
+    }
+
+    if (!user) {
+      user = await userService.createUserWithOauth({
+        providerUser: gitHubUser,
+        provider: "github",
+        providerAccountId: gitHubUserId,
+        email: email,
+      });
+    }
+
+    // Create session
+    await setAccessAndRefreshToken(user, req, res);
+
+    return res.redirect("/");
+  } catch (error) {
+    console.error("Error handling Github callback:", error);
+    req.flash("error", "Github login failed");
+    return res.redirect("/login");
+  }
+};
+
+export const setAccessAndRefreshToken = async (user, req, res) => {
+  // create session
+  const session = await createSession(user.id, {
+    ip: req.clientIp,
+    userAgent: req.headers["user-agent"],
+  });
+
+  const jwtToken = await generateJwtToken({
+    id: user.id,
+    name: `${user.firstName} ${user.lastName}`,
+    email: user.email,
+    refreshTokenId: session.id,
+  });
+
+  const refreshTokenValue = await generateRefreshToken({
+    refreshTokenId: session.id,
+  });
+
+  const baseConfig = { httpOnly: true, secure: true };
+
+  res.cookie("access_token", jwtToken, {
+    ...baseConfig,
+    maxAge: ACCESS_TOKEN_EXPIRY,
+  });
+
+  res.cookie("refresh_token", refreshTokenValue, {
+    ...baseConfig,
+    maxAge: REFRESH_TOKEN_EXPIRY,
+  });
+};
+

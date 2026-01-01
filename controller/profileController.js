@@ -1,6 +1,4 @@
 import {
-  getUserById,
-  getUserByEmail,
   getSessionsByUserId,
   updateProfileImage,
   updateUserProfile,
@@ -11,6 +9,7 @@ import {
   addPasswordToHistory,
   getCountryCodes,
 } from "../service/profile-service.js";
+import * as userService from "../service/user-service.js";
 import { uploadProfileImage } from "../middlewares/upload-middleware.js";
 import fs from "fs";
 import { validateVerificationCode } from "../validators/verification-validator.js";
@@ -22,7 +21,6 @@ import {
   createResetPasswordCode,
   verifyResetPasswordCode,
 } from "../service/verification-service.js";
-import { getUserByPhone } from "../service/auth-service.js";
 
 // Profile Page
 export const getProfilePage = async (req, res) => {
@@ -32,7 +30,7 @@ export const getProfilePage = async (req, res) => {
     }
 
     // Fetch full user data including createdAt
-    const fullUser = await getUserById(req.user.id);
+    const fullUser = await userService.getUserById(req.user.id);
     if (!fullUser) {
       return res.redirect("/login");
     }
@@ -153,7 +151,7 @@ export const verifyEmailFromLink = async (req, res) => {
       return res.redirect("/login");
     }
 
-    const user = await getUserByEmail(decodeURIComponent(email));
+    const user = await userService.getUserByEmail(decodeURIComponent(email));
     if (!user) {
       req.flash("error", "User not found");
       return res.redirect("/login");
@@ -358,7 +356,7 @@ export const sendResetPasswordLink = async (req, res) => {
       });
     }
 
-    const user = await getUserByEmail(email);
+    const user = await userService.getUserByEmail(email);
     if (!user) {
       // Don't reveal if email exists or not for security
       return res.status(200).json({
@@ -394,7 +392,7 @@ export const getResetPasswordPage = async (req, res) => {
       return res.redirect("/forgot-password");
     }
 
-    const user = await getUserByEmail(decodeURIComponent(email));
+    const user = await userService.getUserByEmail(decodeURIComponent(email));
     if (!user) {
       req.flash("error", "Invalid reset link");
       return res.redirect("/forgot-password");
@@ -431,7 +429,7 @@ export const resetPassword = async (req, res) => {
       });
     }
 
-    const user = await getUserByEmail(email);
+    const user = await userService.getUserByEmail(email);
     if (!user) {
       return res.status(400).json({
         success: false,
@@ -556,7 +554,7 @@ export const submitEditProfile = async (req, res) => {
 
     // Check if phone number already exists for another user
     if (phone && countryCode) {
-      const existingUser = await getUserByPhone(countryCode, phone);
+      const existingUser = await userService.getUserByPhone(countryCode, phone);
       if (existingUser && existingUser.id !== userId) {
         req.flash("error", "Phone number is already registered");
         return res.redirect("/profile/edit");

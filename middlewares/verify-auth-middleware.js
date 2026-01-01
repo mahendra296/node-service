@@ -22,6 +22,8 @@ const publicRoutes = [
   "/reset-password",
   "/auth/google",
   "/auth/google/callback",
+  "/auth/github",
+  "/auth/github/callback",
 ];
 
 /* export const verifyAuthToken = async (req, res, next) => {
