@@ -13,7 +13,7 @@ import * as userService from "../service/user-service.js";
 import { uploadProfileImage } from "../middlewares/upload-middleware.js";
 import fs from "fs";
 import { validateVerificationCode } from "../validators/verification-validator.js";
-import { validateChangePassword } from "../validators/password-validator.js";
+import { validateChangePassword, validateSetPassword } from "../validators/password-validator.js";
 import { validateEditProfile } from "../validators/profile-validator.js";
 import {
   createVerificationCode,
@@ -252,7 +252,16 @@ export const getChangePasswordPage = async (req, res) => {
     if (!req.user) {
       return res.redirect("/login");
     }
+
+    const user = await userService.getUserById(req.user.id);
+    if (!user) {
+      return res.redirect("/login");
+    }
+
+    const hasPassword = !!user.password;
+
     return res.render("profile/change-password", {
+      hasPassword,
       error: req.flash("error"),
       success: req.flash("success"),
     });
@@ -272,7 +281,19 @@ export const changePassword = async (req, res) => {
       return res.redirect("/login");
     }
 
-    const validation = validateChangePassword(req.body);
+    const user = await userService.getUserById(userId);
+    if (!user) {
+      req.flash("error", "User not found");
+      return res.redirect("/change-password");
+    }
+
+    const hasPassword = !!user.password;
+
+    // Use different validation based on whether user has a password
+    const validation = hasPassword
+      ? validateChangePassword(req.body)
+      : validateSetPassword(req.body);
+
     if (!validation.success) {
       const errorMessage =
         validation.error.errors?.[0]?.message ||
@@ -282,47 +303,45 @@ export const changePassword = async (req, res) => {
       return res.redirect("/change-password");
     }
 
-    const { currentPassword, newPassword } = validation.data;
+    const { newPassword } = validation.data;
 
-    const user = await getUserById(userId);
-    if (!user) {
-      req.flash("error", "User not found");
-      return res.redirect("/change-password");
-    }
+    if (hasPassword) {
+      const { currentPassword } = validation.data;
 
-    const isValidPassword = await verifyPassword(
-      currentPassword,
-      user.password
-    );
-    if (!isValidPassword) {
-      req.flash("error", "Current password is incorrect");
-      return res.redirect("/change-password");
-    }
-
-    // Check if new password matches current password
-    const isSameAsCurrent = await verifyPassword(newPassword, user.password);
-    if (isSameAsCurrent) {
-      req.flash(
-        "error",
-        "New password cannot be the same as your current password"
+      const isValidPassword = await verifyPassword(
+        currentPassword,
+        user.password
       );
-      return res.redirect("/change-password");
-    }
+      if (!isValidPassword) {
+        req.flash("error", "Current password is incorrect");
+        return res.redirect("/change-password");
+      }
 
-    // Check if new password was used in last 5 passwords
-    const isInHistory = await isPasswordInHistory(userId, newPassword);
-    if (isInHistory) {
-      req.flash("error", "New password cannot be one of your last 5 passwords");
-      return res.redirect("/change-password");
-    }
+      // Check if new password matches current password
+      const isSameAsCurrent = await verifyPassword(newPassword, user.password);
+      if (isSameAsCurrent) {
+        req.flash(
+          "error",
+          "New password cannot be the same as your current password"
+        );
+        return res.redirect("/change-password");
+      }
 
-    // Add current password to history before updating
-    await addPasswordToHistory(userId, user.password);
+      // Check if new password was used in last 5 passwords
+      const isInHistory = await isPasswordInHistory(userId, newPassword);
+      if (isInHistory) {
+        req.flash("error", "New password cannot be one of your last 5 passwords");
+        return res.redirect("/change-password");
+      }
+
+      // Add current password to history before updating
+      await addPasswordToHistory(userId, user.password);
+    }
 
     const hashedPassword = await hashPassword(newPassword);
     await updatePassword(userId, hashedPassword);
 
-    req.flash("success", "Password changed successfully");
+    req.flash("success", hasPassword ? "Password changed successfully" : "Password set successfully");
     return res.redirect("/profile");
   } catch (error) {
     console.error(error);
