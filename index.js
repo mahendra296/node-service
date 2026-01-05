@@ -8,6 +8,7 @@ import { shortenRouter } from "./routes/page.routes.js";
 import { verifyAuthToken } from "./middlewares/verify-auth-middleware.js";
 import { loadSessionsIntoCache } from "./service/auth-service.js";
 import { getUserById } from "./service/user-service.js";
+import { errorHandler, notFoundHandler } from "./middlewares/error-handler.js";
 
 const app = express();
 
@@ -54,9 +55,10 @@ app.set("view engine", "ejs");
 app.use(shortenRouter);
 
 // 404 handler - must be after all other routes
-app.use((req, res) => {
-  res.status(404).render("404");
-});
+app.use(notFoundHandler);
+
+// Global error handler - must be last
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 
