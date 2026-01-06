@@ -14,8 +14,13 @@ import { getUserById } from "./service/user-service.js";
 import { errorHandler, notFoundHandler } from "./middlewares/error-handler.js";
 import { typeDefs } from "./graphql/typeDefs.js";
 import { resolvers } from "./graphql/resolvers/index.js";
+import logger from "./utils/logger.js";
+import httpLogger from "./middlewares/http-logger.js";
 
 const app = express();
+
+// HTTP request logging (should be first middleware)
+app.use(httpLogger);
 
 // parse cookies
 app.use(cookieParser());
@@ -139,11 +144,12 @@ const startServer = async () => {
 
     // Start HTTP server
     httpServer.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
-      console.log(`GraphQL endpoint available at http://localhost:${PORT}/graphql`);
+      logger.info(`Server is running on port ${PORT}`);
+      logger.info(`GraphQL endpoint available at http://localhost:${PORT}/graphql`);
+      logger.info(`Environment: ${process.env.NODE_ENV || "development"}`);
     });
   } catch (error) {
-    console.error("Failed to start server:", error);
+    logger.error("Failed to start server:", { error: error.message, stack: error.stack });
     process.exit(1);
   }
 };

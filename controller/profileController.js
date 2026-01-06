@@ -64,7 +64,7 @@ export const sendVerificationCode = async (req, res) => {
       });
     }
 
-    const user = await getUserById(userId);
+    const user = await userService.getUserById(userId);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -209,7 +209,7 @@ export const uploadUserProfileImage = (req, res) => {
       }
 
       // Get current user to check for existing profile image
-      const user = await getUserById(userId);
+      const user = await userService.getUserById(userId);
 
       // Delete old profile image if exists
       if (user?.profileImage) {
@@ -530,7 +530,7 @@ export const getEditProfilePage = async (req, res) => {
       return res.redirect("/login");
     }
 
-    const fullUser = await getUserById(req.user.id);
+    const fullUser = await userService.getUserById(req.user.id);
     if (!fullUser) {
       return res.redirect("/login");
     }
