@@ -1,14 +1,13 @@
 import ApiResponse from '../utils/api-response.js';
+import logger from '../utils/logger.js';
 
 /**
  * Global error handler middleware
  * Must be registered after all routes
  */
 const errorHandler = (err, req, res, next) => {
-    // Log error for debugging (in development)
-    if (process.env.NODE_ENV !== 'production') {
-        console.error('Error:', err);
-    }
+    // Log error using logger
+    logger.logError(err, req);
 
     // Default values
     let statusCode = err.statusCode || 500;

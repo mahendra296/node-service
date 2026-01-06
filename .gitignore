@@ -3,3 +3,7 @@ node_modules/**
 public/uploads/profiles/**
 drizzle/meta/**
 drizzle/000*.sql
+
+# Log files
+logs/
+*.log
