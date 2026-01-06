@@ -1,0 +1,58 @@
+scalar DateTime
+
+type User {
+  id: ID!
+  firstName: String!
+  lastName: String!
+  email: String!
+  phone: String
+  countryCode: String
+  gender: String
+  profileImage: String
+  isEmailVerified: Boolean!
+  isPhoneVerified: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  shortLinks: [ShortLink!]
+}
+
+type Session {
+  id: ID!
+  userId: ID!
+  valid: Boolean!
+  userAgent: String
+  ip: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+input CreateUserInput {
+  firstName: String!
+  lastName: String!
+  email: String!
+  password: String!
+  phone: String
+  countryCode: String
+  gender: String
+}
+
+input UpdateUserInput {
+  firstName: String
+  lastName: String
+  phone: String
+  countryCode: String
+  gender: String
+}
+
+type Query {
+  getAllUsers: [User!]!
+  getUserById(id: ID!): User
+  getUserByEmail(email: String!): User
+  getUserSessionsById(userId: ID!): [Session!]!
+}
+
+type Mutation {
+  createUser(input: CreateUserInput!): User!
+  updateUser(id: ID!, input: UpdateUserInput!): User
+  deleteUser(id: ID!): Boolean!
+}

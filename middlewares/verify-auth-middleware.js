@@ -24,6 +24,7 @@ const publicRoutes = [
   "/auth/google/callback",
   "/auth/github",
   "/auth/github/callback",
+  "/graphql",
 ];
 
 /* export const verifyAuthToken = async (req, res, next) => {

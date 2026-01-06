@@ -1,0 +1,24 @@
+type ShortLink {
+  id: ID!
+  url: String!
+  shortCode: String!
+  userId: ID!
+  user: User
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+input CreateShortLinkInput {
+  url: String!
+  shortCode: String
+  userId: ID!
+}
+
+type Query {
+  getAllShortnerLinks: [ShortLink!]!
+  getShortnerLinkByUserId(userId: ID!): [ShortLink!]!
+}
+
+type Mutation {
+  createShortnerLink(input: CreateShortLinkInput!): ShortLink!
+}
