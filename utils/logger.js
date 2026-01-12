@@ -85,6 +85,7 @@ const transports = [
     format: fileFormat,
     maxsize: 5242880, // 5MB
     maxFiles: 5,
+    zippedArchive: true, // Compress rotated files to .gz
   }),
 
   // Combined log file - all logs
@@ -93,6 +94,7 @@ const transports = [
     format: fileFormat,
     maxsize: 5242880, // 5MB
     maxFiles: 5,
+    zippedArchive: true, // Compress rotated files to .gz
   }),
 
   // HTTP requests log file
@@ -102,6 +104,7 @@ const transports = [
     format: fileFormat,
     maxsize: 5242880, // 5MB
     maxFiles: 5,
+    zippedArchive: true, // Compress rotated files to .gz
   }),
 ];
 
@@ -115,12 +118,18 @@ const logger = winston.createLogger({
     new winston.transports.File({
       filename: path.join(logDir, "exceptions.log"),
       format: fileFormat,
+      maxsize: 5242880, // 5MB
+      maxFiles: 5,
+      zippedArchive: true, // Compress rotated files to .gz
     }),
   ],
   rejectionHandlers: [
     new winston.transports.File({
       filename: path.join(logDir, "rejections.log"),
       format: fileFormat,
+      maxsize: 5242880, // 5MB
+      maxFiles: 5,
+      zippedArchive: true, // Compress rotated files to .gz
     }),
   ],
 });
